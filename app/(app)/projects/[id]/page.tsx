@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { mockProjects, Project, PROJECT_PHASES, ProjectPhase, formatBudget } from '@/lib/projects-data';
+import { SchedulesTab } from '@/components/projects/schedules';
 import { mockClients } from '@/lib/crm-data';
 import { PinButton } from '@/components/crm/PinButton';
 import { EmptyState } from '@/components/crm/EmptyState';
@@ -16,7 +17,7 @@ import { NotesPanel } from '@/components/crm/NotesPanel';
 import { DetailSection, DetailField } from '@/components/crm/DetailSection';
 import { DatePicker } from '@/components/ui/DatePicker';
 
-const tabs = ['Overview', 'Tasks', 'Timeline', 'Time Tracking', 'Design Centre', 'Procurement', 'Finance', 'Notes', 'Settings'] as const;
+const tabs = ['Overview', 'Tasks', 'Timeline', 'Time Tracking', 'Schedules', 'Procurement', 'Finance', 'Notes', 'Settings'] as const;
 type Tab = typeof tabs[number];
 
 export default function ProjectWorkspacePage() {
@@ -127,7 +128,13 @@ export default function ProjectWorkspacePage() {
           />
         )}
 
-        {activeTab !== 'Overview' && (
+        {activeTab === 'Schedules' && (
+          <div className="bg-card border border-border rounded-xl overflow-hidden -mx-0" style={{ height: 'calc(100vh - 280px)' }}>
+            <SchedulesTab projectId={project.id} />
+          </div>
+        )}
+
+        {activeTab !== 'Overview' && activeTab !== 'Schedules' && (
           <PlaceholderTab tab={activeTab} />
         )}
       </div>
@@ -284,7 +291,7 @@ function PlaceholderTab({ tab }: { tab: Tab }) {
     'Tasks': { icon: 'checklist', description: 'Manage project tasks, timelines, and team assignments.' },
     'Timeline': { icon: 'schedule', description: 'Detailed project timeline with key milestones and deliverables.' },
     'Time Tracking': { icon: 'timer', description: 'Track time spent on project phases and tasks.' },
-    'Design Centre': { icon: 'palette', description: 'Design concepts, mood boards, material selections, and revisions.' },
+    'Schedules': { icon: 'table_chart', description: 'Product schedules, specifications, and procurement tracking.' },
     'Procurement': { icon: 'inventory_2', description: 'Purchase orders, supplier management, and order tracking.' },
     'Finance': { icon: 'account_balance_wallet', description: 'Budgets, invoices, payments, and financial reporting.' },
     'Notes': { icon: 'sticky_note_2', description: 'All project notes in one organized space.' },
