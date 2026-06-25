@@ -129,9 +129,7 @@ export default function ProjectWorkspacePage() {
         )}
 
         {activeTab === 'Schedules' && (
-          <div className="bg-card border border-border rounded-xl overflow-hidden -mx-0" style={{ height: 'calc(100vh - 280px)' }}>
-            <SchedulesTab projectId={project.id} />
-          </div>
+          <SchedulesTab projectId={project.id} />
         )}
 
         {activeTab !== 'Overview' && activeTab !== 'Schedules' && (
