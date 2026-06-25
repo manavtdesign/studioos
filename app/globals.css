@@ -1,0 +1,181 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+@layer base {
+  :root {
+    --background: 0 0% 98%;
+    --foreground: 0 0% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 0 0% 95%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 0 0% 9%;
+    --radius: 6px;
+  }
+
+  .dark {
+    --background: 0 0% 7%;
+    --foreground: 0 0% 93%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 93%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 93%;
+    --primary: 0 0% 93%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 93%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 58%;
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 93%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 80%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .material-icons-outlined,
+  .material-icons {
+    font-family: 'Material Icons Outlined';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 18px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-smoothing: antialiased;
+    vertical-align: middle;
+  }
+}
+
+@layer components {
+  .sidebar-item {
+    @apply flex items-center gap-2.5 px-2.5 py-1.5 rounded text-sm hover:bg-muted transition-colors;
+  }
+
+  .nav-icon,
+  .nav-label {
+    @apply text-foreground/70;
+  }
+
+  .sidebar-item.active .nav-icon,
+  .sidebar-item.active .nav-label {
+    @apply text-foreground;
+  }
+
+  .sidebar-item:hover .nav-icon,
+  .sidebar-item:hover .nav-label {
+    @apply text-foreground;
+  }
+
+  .sidebar-item.active {
+    @apply bg-muted font-medium;
+  }
+
+  .table-header {
+    @apply px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider;
+  }
+
+  .table-cell {
+    @apply px-4 py-3 text-sm;
+  }
+
+  .notion-button {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md hover:bg-muted transition-colors;
+  }
+
+  .status-dot {
+    @apply w-1.5 h-1.5 rounded-full flex-shrink-0;
+  }
+
+  .kanban-column {
+    @apply flex-shrink-0 w-72 bg-muted/50 rounded-lg p-3;
+  }
+
+  /* Project cards */
+  .project-card {
+    @apply bg-card border border-border rounded-xl overflow-hidden hover:border-muted-foreground/30 hover:shadow-sm transition-all cursor-pointer;
+  }
+
+  .project-card-cover {
+    @apply h-36 bg-muted relative flex items-end p-4;
+  }
+
+  /* Search input */
+  .search-input {
+    @apply flex items-center gap-2 px-3 py-1.5 bg-muted rounded-full text-sm text-muted-foreground border border-transparent focus-within:border-border transition-colors;
+  }
+
+  /* KPI Card */
+  .kpi-card {
+    @apply bg-card border border-border rounded-xl p-5;
+  }
+
+  /* Modal form inputs */
+  .modal-input {
+    @apply w-full px-3 py-2 bg-muted rounded-lg border border-transparent text-sm outline-none focus:border-border transition-colors;
+  }
+
+  /* Modal scrollable content */
+  .modal-scroll {
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  .modal-scroll:hover {
+    scrollbar-color: rgba(0,0,0,0.2) transparent;
+  }
+  .modal-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  .modal-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .modal-scroll::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,0.15);
+    border-radius: 3px;
+  }
+  .modal-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0,0,0,0.25);
+  }
+
+  /* Smooth theme transition */
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+}
