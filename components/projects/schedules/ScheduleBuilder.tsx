@@ -563,6 +563,3 @@ export function ScheduleBuilder({ schedule, onChange }: ScheduleBuilderProps) {
     </div>
   );
 }
-
-
-export { ScheduleBuilder }
