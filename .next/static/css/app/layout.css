@@ -875,6 +875,12 @@ html.dark {
 .right-2\.5 {
   right: 0.625rem;
 }
+.right-1\.5 {
+  right: 0.375rem;
+}
+.top-1\.5 {
+  top: 0.375rem;
+}
 .z-10 {
   z-index: 10;
 }
@@ -1030,6 +1036,15 @@ html.dark {
 }
 .mt-auto {
   margin-top: auto;
+}
+.mb-2\.5 {
+  margin-bottom: 0.625rem;
+}
+.mb-5 {
+  margin-bottom: 1.25rem;
+}
+.mr-4 {
+  margin-right: 1rem;
 }
 .line-clamp-2 {
   overflow: hidden;
@@ -1187,6 +1202,9 @@ html.dark {
 .min-h-\[80px\] {
   min-height: 80px;
 }
+.min-h-\[44px\] {
+  min-height: 44px;
+}
 .w-0 {
   width: 0px;
 }
@@ -1317,6 +1335,9 @@ html.dark {
 .min-w-max {
   min-width: -moz-max-content;
   min-width: max-content;
+}
+.min-w-\[130px\] {
+  min-width: 130px;
 }
 .max-w-2xl {
   max-width: 42rem;
@@ -1541,6 +1562,16 @@ html.dark {
 .gap-6 {
   gap: 1.5rem;
 }
+.gap-x-4 {
+  -moz-column-gap: 1rem;
+       column-gap: 1rem;
+}
+.gap-y-2 {
+  row-gap: 0.5rem;
+}
+.gap-y-2\.5 {
+  row-gap: 0.625rem;
+}
 .space-x-1 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-x-reverse: 0;
   margin-right: calc(0.25rem * var(--tw-space-x-reverse));
@@ -1596,6 +1627,11 @@ html.dark {
   margin-top: calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));
   margin-bottom: calc(1.5rem * var(--tw-space-y-reverse));
 }
+.space-y-8 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(2rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(2rem * var(--tw-space-y-reverse));
+}
 .divide-y > :not([hidden]) ~ :not([hidden]) {
   --tw-divide-y-reverse: 0;
   border-top-width: calc(1px * calc(1 - var(--tw-divide-y-reverse)));
@@ -1606,6 +1642,9 @@ html.dark {
 }
 .divide-border\/30 > :not([hidden]) ~ :not([hidden]) {
   border-color: hsl(var(--border) / 0.3);
+}
+.divide-border\/50 > :not([hidden]) ~ :not([hidden]) {
+  border-color: hsl(var(--border) / 0.5);
 }
 .self-center {
   align-self: center;
@@ -1669,6 +1708,10 @@ html.dark {
 .rounded-t-\[10px\] {
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
+}
+.rounded-l-xl {
+  border-top-left-radius: 0.75rem;
+  border-bottom-left-radius: 0.75rem;
 }
 .rounded-tl-sm {
   border-top-left-radius: calc(var(--radius) - 4px);
@@ -1903,6 +1946,9 @@ html.dark {
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
 }
+.bg-black\/20 {
+  background-color: rgb(0 0 0 / 0.2);
+}
 .fill-current {
   fill: currentColor;
 }
@@ -2112,6 +2158,15 @@ html.dark {
 .pt-7 {
   padding-top: 1.75rem;
 }
+.pb-8 {
+  padding-bottom: 2rem;
+}
+.pl-7 {
+  padding-left: 1.75rem;
+}
+.pt-0\.5 {
+  padding-top: 0.125rem;
+}
 .text-left {
   text-align: left;
 }
@@ -2308,6 +2363,9 @@ html.dark {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity));
 }
+.text-muted-foreground\/25 {
+  color: hsl(var(--muted-foreground) / 0.25);
+}
 .underline {
   text-decoration-line: underline;
 }
@@ -2388,8 +2446,15 @@ html.dark {
 .ring-ring {
   --tw-ring-color: hsl(var(--ring));
 }
+.ring-foreground\/20 {
+  --tw-ring-color: hsl(var(--foreground) / 0.2);
+}
 .ring-offset-background {
   --tw-ring-offset-color: hsl(var(--background));
+}
+.blur {
+  --tw-blur: blur(8px);
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
 }
 .filter {
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
@@ -2784,9 +2849,19 @@ html.dark {
   opacity: 1;
 }
 
+.hover\:opacity-90:hover {
+  opacity: 0.9;
+}
+
 .hover\:shadow-sm:hover {
   --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.hover\:shadow-md:hover {
+  --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
@@ -2796,6 +2871,10 @@ html.dark {
 
 .focus\:border-foreground\/30:focus {
   border-color: hsl(var(--foreground) / 0.3);
+}
+
+.focus\:border-border\/60:focus {
+  border-color: hsl(var(--border) / 0.6);
 }
 
 .focus\:bg-accent:focus {
@@ -3625,6 +3704,10 @@ html.dark {
 
   .lg\:col-span-2 {
     grid-column: span 2 / span 2;
+  }
+
+  .lg\:flex {
+    display: flex;
   }
 
   .lg\:grid-cols-2 {
