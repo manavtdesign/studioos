@@ -9,22 +9,39 @@ import { EmptyState } from '@/components/crm/EmptyState';
 import { PinButton } from '@/components/crm/PinButton';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { ProjectStatusBadge } from '@/components/projects/ProjectStatusBadge';
-import { ProjectFilterBar } from '@/components/projects/ProjectFilterBar';
 import { NewProjectModal, NewProjectData } from '@/components/projects/NewProjectModal';
+
+const SORT_OPTIONS = [
+  { label: 'Project Name', value: 'name' },
+  { label: 'Last Updated', value: 'updated' },
+  { label: 'Created', value: 'created' },
+];
+
+const FILTER_PHASES = ['All Phases', ...PROJECT_PHASES];
+const FILTER_STATUSES = ['All Statuses', ...PROJECT_STATUSES];
+const FILTER_TYPES = ['All Types', ...PROJECT_TYPES];
 
 export default function ProjectsPage() {
   const { designers } = useDesigners();
   const [view, setView] = useState<'card' | 'table'>('card');
   const [showModal, setShowModal] = useState(false);
 
+  // View mode: all vs archived
+  const [viewMode, setViewMode] = useState<'all' | 'archived'>('all');
+
   // Filters
   const [search, setSearch] = useState('');
-  const [phaseFilter, setPhaseFilter] = useState('All');
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [managerFilter, setManagerFilter] = useState('All');
-  const [clientFilter, setClientFilter] = useState('All');
-  const [typeFilter, setTypeFilter] = useState('All');
-  const [pinnedFilter, setPinnedFilter] = useState('All');
+  const [phaseFilter, setPhaseFilter] = useState('All Phases');
+  const [statusFilter, setStatusFilter] = useState('All Statuses');
+  const [typeFilter, setTypeFilter] = useState('All Types');
+
+  // Sort
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  // Dropdowns
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [showSortMenu, setShowSortMenu] = useState(false);
 
   const [projects, setProjects] = useState(mockProjects);
 
@@ -35,32 +52,44 @@ export default function ProjectsPage() {
   const filtered = useMemo(() => {
     return projects
       .filter((p) => {
+        // View mode filter
+        if (viewMode === 'archived' && p.status !== 'Archived') return false;
+        if (viewMode === 'all' && p.status === 'Archived') return false;
+
         const client = mockClients.find((c) => c.id === p.clientId);
         const q = search.toLowerCase();
 
         if (q && ![p.name, p.address, p.projectManager, client?.primaryContact, client?.company]
           .some((f) => f?.toLowerCase().includes(q))) return false;
-        if (phaseFilter !== 'All' && p.currentPhase !== phaseFilter) return false;
-        if (statusFilter !== 'All' && p.status !== statusFilter) return false;
-        if (managerFilter !== 'All' && p.projectManager !== managerFilter) return false;
-        if (clientFilter !== 'All' && client?.primaryContact !== clientFilter) return false;
-        if (typeFilter !== 'All' && p.projectType !== typeFilter) return false;
-        if (pinnedFilter === 'Pinned' && !p.pinned) return false;
-        if (pinnedFilter === 'Unpinned' && p.pinned) return false;
+        if (phaseFilter !== 'All Phases' && p.currentPhase !== phaseFilter) return false;
+        if (statusFilter !== 'All Statuses' && p.status !== statusFilter) return false;
+        if (typeFilter !== 'All Types' && p.projectType !== typeFilter) return false;
 
         return true;
       })
-      .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
-  }, [projects, search, phaseFilter, statusFilter, managerFilter, clientFilter, typeFilter, pinnedFilter]);
+      .sort((a, b) => {
+        // Pinned first
+        const pinDiff = (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
+        if (pinDiff !== 0) return pinDiff;
+
+        let valA = '', valB = '';
+        if (sortBy === 'name') { valA = a.name; valB = b.name; }
+        else if (sortBy === 'updated') { valA = a.updatedAt; valB = b.updatedAt; }
+        else if (sortBy === 'created') { valA = a.createdAt; valB = b.createdAt; }
+
+        const cmp = valA.localeCompare(valB);
+        return sortOrder === 'asc' ? cmp : -cmp;
+      });
+  }, [projects, search, phaseFilter, statusFilter, typeFilter, viewMode, sortBy, sortOrder]);
+
+  const hasActiveFilters = phaseFilter !== 'All Phases' || statusFilter !== 'All Statuses' || typeFilter !== 'All Types';
+  const activeSortLabel = SORT_OPTIONS.find(o => o.value === sortBy)?.label ?? 'Sort';
 
   const clearFilters = () => {
     setSearch('');
-    setPhaseFilter('All');
-    setStatusFilter('All');
-    setManagerFilter('All');
-    setClientFilter('All');
-    setTypeFilter('All');
-    setPinnedFilter('All');
+    setPhaseFilter('All Phases');
+    setStatusFilter('All Statuses');
+    setTypeFilter('All Types');
   };
 
   const handleNewProject = (data: NewProjectData) => {
@@ -83,8 +112,8 @@ export default function ProjectsPage() {
       siteNotes: data.siteNotes || null,
       pinned: false,
       coverIndex: Math.floor(Math.random() * 6),
-      createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      updatedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      createdAt: new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }),
+      updatedAt: new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }),
       progress: Math.round((PROJECT_PHASES.indexOf(data.currentPhase) + 1) / PROJECT_PHASES.length * 100),
       team: {
         projectManager: data.projectManager || 'Ellie S.',
@@ -103,76 +132,205 @@ export default function ProjectsPage() {
       {showModal && <NewProjectModal onClose={() => setShowModal(false)} onSave={handleNewProject} />}
 
       <div className="space-y-5">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold">Projects</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">Manage all interior design projects across your studio.</p>
+        {/* Page header */}
+        <div>
+          <h1 className="text-2xl font-semibold">Projects</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">Manage all interior design projects across your studio.</p>
+        </div>
+
+        {/* Toolbar */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Left: All / Archived tabs */}
+          <div className="flex border border-border rounded-lg overflow-hidden">
+            <button
+              onClick={() => setViewMode('all')}
+              className={`px-3 py-1.5 text-sm transition-colors ${viewMode === 'all' ? 'bg-muted text-foreground font-medium' : 'text-muted-foreground hover:bg-muted/50'}`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setViewMode('archived')}
+              className={`px-3 py-1.5 text-sm border-l border-border transition-colors ${viewMode === 'archived' ? 'bg-muted text-foreground font-medium' : 'text-muted-foreground hover:bg-muted/50'}`}
+            >
+              Archived
+            </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex-1" />
+
+          {/* Right: Search, Filter, Sort, View toggle, New */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Search */}
+            <div className="relative">
+              <span className="material-icons-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" style={{ fontSize: 16 }}>search</span>
+              <input
+                type="text"
+                placeholder="Search projects..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8 pr-3 py-1.5 text-sm border border-border rounded-lg bg-background w-52 placeholder:text-muted-foreground outline-none focus:border-foreground/30 transition-colors"
+              />
+              {search && (
+                <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <span className="material-icons-outlined" style={{ fontSize: 14 }}>close</span>
+                </button>
+              )}
+            </div>
+
+            {/* Filter */}
+            <div className="relative">
+              <button
+                onClick={() => setShowFilterMenu(!showFilterMenu)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm border rounded-lg transition-colors ${
+                  hasActiveFilters ? 'border-foreground/30 bg-muted text-foreground' : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                }`}
+              >
+                <span className="material-icons-outlined" style={{ fontSize: 16 }}>filter_list</span>
+                Filter
+                {hasActiveFilters && <span className="w-1.5 h-1.5 rounded-full bg-foreground flex-shrink-0" />}
+                <span className="material-icons-outlined" style={{ fontSize: 14 }}>expand_more</span>
+              </button>
+              {showFilterMenu && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setShowFilterMenu(false)} />
+                  <div className="absolute right-0 mt-1 w-64 bg-popover border border-border rounded-xl shadow-lg z-30 py-2 px-3 space-y-3">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground block mb-1.5">Phase</label>
+                      <select
+                        value={phaseFilter}
+                        onChange={(e) => setPhaseFilter(e.target.value)}
+                        className="w-full text-sm border border-border rounded-lg px-2.5 py-1.5 bg-background outline-none"
+                      >
+                        {FILTER_PHASES.map(p => <option key={p}>{p}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground block mb-1.5">Status</label>
+                      <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="w-full text-sm border border-border rounded-lg px-2.5 py-1.5 bg-background outline-none"
+                      >
+                        {FILTER_STATUSES.map(s => <option key={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground block mb-1.5">Type</label>
+                      <select
+                        value={typeFilter}
+                        onChange={(e) => setTypeFilter(e.target.value)}
+                        className="w-full text-sm border border-border rounded-lg px-2.5 py-1.5 bg-background outline-none"
+                      >
+                        {FILTER_TYPES.map(t => <option key={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    {hasActiveFilters && (
+                      <button onClick={() => { clearFilters(); setShowFilterMenu(false); }} className="text-xs text-muted-foreground hover:text-foreground underline">
+                        Clear filters
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Sort */}
+            <div className="relative">
+              <button
+                onClick={() => setShowSortMenu(!showSortMenu)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-border rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              >
+                <span className="material-icons-outlined" style={{ fontSize: 16 }}>sort</span>
+                {activeSortLabel}
+                <span className="material-icons-outlined" style={{ fontSize: 14 }}>expand_more</span>
+              </button>
+              {showSortMenu && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setShowSortMenu(false)} />
+                  <div className="absolute right-0 mt-1 w-52 bg-popover border border-border rounded-xl shadow-lg z-30 py-1">
+                    <p className="px-3 py-1.5 text-xs font-medium text-muted-foreground">Sort By</p>
+                    {SORT_OPTIONS.map(opt => (
+                      <button
+                        key={opt.value}
+                        onClick={() => { setSortBy(opt.value); setShowSortMenu(false); }}
+                        className={`flex items-center justify-between w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left ${sortBy === opt.value ? 'font-medium text-foreground' : 'text-muted-foreground'}`}
+                      >
+                        {opt.label}
+                        {sortBy === opt.value && <span className="material-icons-outlined" style={{ fontSize: 14 }}>check</span>}
+                      </button>
+                    ))}
+                    <div className="border-t border-border my-1" />
+                    <p className="px-3 py-1.5 text-xs font-medium text-muted-foreground">Order</p>
+                    <button
+                      onClick={() => { setSortOrder('asc'); setShowSortMenu(false); }}
+                      className={`flex items-center justify-between w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left ${sortOrder === 'asc' ? 'font-medium text-foreground' : 'text-muted-foreground'}`}
+                    >
+                      Ascending
+                      {sortOrder === 'asc' && <span className="material-icons-outlined" style={{ fontSize: 14 }}>check</span>}
+                    </button>
+                    <button
+                      onClick={() => { setSortOrder('desc'); setShowSortMenu(false); }}
+                      className={`flex items-center justify-between w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left ${sortOrder === 'desc' ? 'font-medium text-foreground' : 'text-muted-foreground'}`}
+                    >
+                      Descending
+                      {sortOrder === 'desc' && <span className="material-icons-outlined" style={{ fontSize: 14 }}>check</span>}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* View toggle */}
             <div className="flex border border-border rounded-lg overflow-hidden">
               <button
                 onClick={() => setView('card')}
                 className={`px-3 py-1.5 text-sm flex items-center gap-1.5 transition-colors ${view === 'card' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/50'}`}
+                title="Card view"
               >
                 <span className="material-icons-outlined" style={{ fontSize: 15 }}>grid_view</span>
-                Cards
               </button>
               <button
                 onClick={() => setView('table')}
                 className={`px-3 py-1.5 text-sm flex items-center gap-1.5 border-l border-border transition-colors ${view === 'table' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/50'}`}
+                title="Table view"
               >
                 <span className="material-icons-outlined" style={{ fontSize: 15 }}>table_rows</span>
-                Table
               </button>
             </div>
-            <button onClick={() => setShowModal(true)} className="notion-button bg-foreground text-background hover:bg-foreground/90">
+
+            {/* New Project */}
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-foreground text-background rounded-lg hover:bg-foreground/90 transition-colors font-medium"
+            >
               <span className="material-icons-outlined" style={{ fontSize: 16 }}>add</span>
               New Project
             </button>
           </div>
         </div>
 
-        {/* Filters */}
-        <ProjectFilterBar
-          search={search}
-          onSearchChange={setSearch}
-          phaseFilter={phaseFilter}
-          onPhaseChange={setPhaseFilter}
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-          managerFilter={managerFilter}
-          onManagerChange={setManagerFilter}
-          clientFilter={clientFilter}
-          onClientChange={setClientFilter}
-          typeFilter={typeFilter}
-          onTypeChange={setTypeFilter}
-          pinnedFilter={pinnedFilter}
-          onPinnedChange={setPinnedFilter}
-          onClearFilters={clearFilters}
-        />
-
         {/* Content */}
         {filtered.length === 0 ? (
           <EmptyState
             icon="folder"
-            title={search || phaseFilter !== 'All' || statusFilter !== 'All' ? 'No projects match your filters' : 'No projects yet'}
-            description={search || phaseFilter !== 'All' || statusFilter !== 'All' ? 'Try adjusting your search or filters.' : 'Create your first project to get started.'}
-            action={{ label: '+ New Project', onClick: () => setShowModal(true) }}
+            title={viewMode === 'archived' ? 'No archived projects' : (search || hasActiveFilters ? 'No projects match your filters' : 'No projects yet')}
+            description={search || hasActiveFilters ? 'Try adjusting your search or filters.' : viewMode === 'archived' ? 'Archived projects will appear here.' : 'Create your first project to get started.'}
+            action={viewMode === 'all' ? { label: '+ New Project', onClick: () => setShowModal(true) } : undefined}
           />
         ) : view === 'card' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filtered.map((project) => (
               <ProjectCard key={project.id} project={project} onPin={() => togglePin(project.id)} />
             ))}
-            <button
-              onClick={() => setShowModal(true)}
-              className="border-2 border-dashed border-border rounded-xl h-56 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground transition-colors"
-            >
-              <span className="material-icons-outlined">add</span>
-              <span className="text-sm">New Project</span>
-            </button>
+            {viewMode === 'all' && (
+              <button
+                onClick={() => setShowModal(true)}
+                className="border-2 border-dashed border-border rounded-xl h-56 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground transition-colors"
+              >
+                <span className="material-icons-outlined">add</span>
+                <span className="text-sm">New Project</span>
+              </button>
+            )}
           </div>
         ) : (
           <div className="bg-card border border-border rounded-xl overflow-hidden">

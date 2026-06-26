@@ -129,7 +129,9 @@ export default function ProjectWorkspacePage() {
         )}
 
         {activeTab === 'Schedules' && (
-          <SchedulesTab projectId={project.id} />
+          <div className="-mx-6">
+            <SchedulesTab projectId={project.id} />
+          </div>
         )}
 
         {activeTab !== 'Overview' && activeTab !== 'Schedules' && (

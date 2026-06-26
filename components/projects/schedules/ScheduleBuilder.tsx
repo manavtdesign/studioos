@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import {
   Schedule, ScheduleSection as ScheduleSectionType, ScheduleProduct,
-  ProductFlag, createEmptyProduct, createEmptySection,
+  ProductFlag, createEmptyProduct, createEmptySection, productStatusConfig,
 } from '@/lib/schedules-data';
 import { ScheduleSection } from './ScheduleSection';
 import { ExportScheduleModal } from './ExportScheduleModal';
@@ -13,15 +13,26 @@ interface ScheduleBuilderProps {
   onChange: (schedule: Schedule) => void;
 }
 
-type ViewMode = 'Summary' | 'Financial';
+const SORT_OPTIONS = [
+  { label: 'Product Name', value: 'name' },
+  { label: 'Supplier', value: 'supplier' },
+  { label: 'Section', value: 'section' },
+  { label: 'Last Updated', value: 'updated' },
+  { label: 'Created', value: 'created' },
+];
+
+const FILTER_OPTIONS = ['All', 'Draft', 'Pending Approval', 'Approved', 'Ordered', 'Installed', 'Archived', 'Flagged'];
 
 export function ScheduleBuilder({ schedule, onChange }: ScheduleBuilderProps) {
-  const [viewMode, setViewMode] = useState<ViewMode>('Summary');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
-  const [viewSectionId, setViewSectionId] = useState<string | 'all'>('all');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const [showBulkMenu, setShowBulkMenu] = useState(false);
 
   // Drag state
   const [dragProductId, setDragProductId] = useState<string | null>(null);
@@ -92,9 +103,7 @@ export function ScheduleBuilder({ schedule, onChange }: ScheduleBuilderProps) {
   const handleAddProduct = useCallback((sectionId: string) => {
     updateSchedule(draft => {
       const sec = draft.sections.find(s => s.id === sectionId);
-      if (sec) {
-        sec.products.push(createEmptyProduct(sec.products.length));
-      }
+      if (sec) sec.products.push(createEmptyProduct(sec.products.length));
     });
   }, [updateSchedule]);
 
@@ -112,9 +121,7 @@ export function ScheduleBuilder({ schedule, onChange }: ScheduleBuilderProps) {
       if (moved) {
         const product = moved;
         draft.sections = draft.sections.map(sec => {
-          if (sec.id === targetSectionId) {
-            return { ...sec, products: [...sec.products, product] };
-          }
+          if (sec.id === targetSectionId) return { ...sec, products: [...sec.products, product] };
           return sec;
         });
       }
@@ -125,9 +132,7 @@ export function ScheduleBuilder({ schedule, onChange }: ScheduleBuilderProps) {
     updateSchedule(draft => {
       draft.sections = draft.sections.map(sec => ({
         ...sec,
-        products: sec.products.map(p =>
-          p.id === productId ? { ...p, status: 'Archived' as const } : p
-        ),
+        products: sec.products.map(p => p.id === productId ? { ...p, status: 'Archived' as const } : p),
       }));
     });
   }, [updateSchedule]);
@@ -138,9 +143,7 @@ export function ScheduleBuilder({ schedule, onChange }: ScheduleBuilderProps) {
         ...sec,
         products: sec.products.map(p => {
           if (p.id !== productId) return p;
-          const flags = p.flags.includes(flag)
-            ? p.flags.filter(f => f !== flag)
-            : [...p.flags, flag];
+          const flags = p.flags.includes(flag) ? p.flags.filter(f => f !== flag) : [...p.flags, flag];
           return { ...p, flags };
         }),
       }));
@@ -211,27 +214,19 @@ export function ScheduleBuilder({ schedule, onChange }: ScheduleBuilderProps) {
   const handleDrop = useCallback((e: React.DragEvent, targetProductId: string, targetSectionId: string) => {
     e.preventDefault();
     if (!dragProductId || dragProductId === targetProductId) {
-      setDragProductId(null);
-      setDragSectionId(null);
-      setDragOverProductId(null);
+      setDragProductId(null); setDragSectionId(null); setDragOverProductId(null);
       return;
     }
-
     updateSchedule(draft => {
       let movedProduct: ScheduleProduct | null = null;
-
-      // Remove from source
       draft.sections = draft.sections.map(sec => {
         const idx = sec.products.findIndex(p => p.id === dragProductId);
         if (idx === -1) return sec;
         movedProduct = { ...sec.products[idx] };
         return { ...sec, products: sec.products.filter(p => p.id !== dragProductId) };
       });
-
       if (!movedProduct) return;
       const product = movedProduct;
-
-      // Insert at target
       draft.sections = draft.sections.map(sec => {
         if (sec.id !== targetSectionId) return sec;
         const idx = sec.products.findIndex(p => p.id === targetProductId);
@@ -241,43 +236,12 @@ export function ScheduleBuilder({ schedule, onChange }: ScheduleBuilderProps) {
         return { ...sec, products: products.map((p, i) => ({ ...p, order: i })) };
       });
     });
-
-    setDragProductId(null);
-    setDragSectionId(null);
-    setDragOverProductId(null);
+    setDragProductId(null); setDragSectionId(null); setDragOverProductId(null);
   }, [dragProductId, updateSchedule]);
 
   const handleDragEnd = useCallback(() => {
-    setDragProductId(null);
-    setDragSectionId(null);
-    setDragOverProductId(null);
+    setDragProductId(null); setDragSectionId(null); setDragOverProductId(null);
   }, []);
-
-  // ── Filtered sections ──────────────────────────────────────────────────────
-
-  const displaySections = useMemo(() => {
-    return schedule.sections
-      .filter(sec => viewSectionId === 'all' || sec.id === viewSectionId)
-      .map(sec => {
-        if (!searchQuery && filterStatus === 'All') return sec;
-        const products = sec.products.filter(p => {
-          const q = searchQuery.toLowerCase();
-          const matchesSearch = !searchQuery || [p.name, p.brand, p.supplier, p.docCode, p.description, p.productType]
-            .some(v => v?.toLowerCase().includes(q));
-          const matchesFilter = filterStatus === 'All'
-            ? true
-            : filterStatus === 'Flagged'
-            ? p.flags.length > 0
-            : p.status === filterStatus;
-          return matchesSearch && matchesFilter;
-        });
-        return { ...sec, products };
-      })
-      .filter(sec => {
-        if (!searchQuery && filterStatus === 'All') return true;
-        return sec.products.length > 0;
-      });
-  }, [schedule.sections, viewSectionId, searchQuery, filterStatus]);
 
   // ── Stats ──────────────────────────────────────────────────────────────────
 
@@ -292,267 +256,266 @@ export function ScheduleBuilder({ schedule, onChange }: ScheduleBuilderProps) {
     };
   }, [schedule]);
 
+  // ── Filtered sections ──────────────────────────────────────────────────────
+
+  const displaySections = useMemo(() => {
+    return schedule.sections.map(sec => {
+      if (!searchQuery && filterStatus === 'All') return sec;
+      const products = sec.products.filter(p => {
+        const q = searchQuery.toLowerCase();
+        const matchesSearch = !searchQuery || [p.name, p.brand, p.supplier, p.docCode, p.description, p.productType, p.sku, p.material, p.finish, p.notes]
+          .some(v => v?.toLowerCase().includes(q));
+        const matchesFilter = filterStatus === 'All' ? true
+          : filterStatus === 'Flagged' ? p.flags.length > 0
+          : p.status === filterStatus;
+        return matchesSearch && matchesFilter;
+      });
+      return { ...sec, products };
+    }).filter(sec => {
+      if (!searchQuery && filterStatus === 'All') return true;
+      return sec.products.length > 0;
+    });
+  }, [schedule.sections, searchQuery, filterStatus]);
+
   const allFilteredProducts = displaySections.flatMap(s => s.products);
+  const activeFilterLabel = filterStatus !== 'All' ? filterStatus : null;
+  const activeSortLabel = SORT_OPTIONS.find(o => o.value === sortBy)?.label ?? 'Sort';
 
   return (
     <div>
-      {/* Controls bar — on page background */}
+      {/* ── Toolbar ── */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50">
-        {/* View mode tabs */}
-        <button
-          onClick={() => setViewMode('Summary')}
-          className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-            viewMode === 'Summary' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-          }`}
-        >
-          Summary
-        </button>
-        <button
-          onClick={() => setViewMode('Financial')}
-          className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-            viewMode === 'Financial' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-          }`}
-        >
-          Financial
-        </button>
 
-        {/* Section picker */}
+        {/* Search */}
+        <div className="relative flex-shrink-0">
+          <span className="material-icons-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" style={{ fontSize: 16 }}>search</span>
+          <input
+            type="text"
+            placeholder="Search products..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8 pr-3 py-1.5 text-sm border border-border rounded-lg bg-background w-52 placeholder:text-muted-foreground outline-none focus:border-foreground/30 transition-colors"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <span className="material-icons-outlined" style={{ fontSize: 14 }}>close</span>
+            </button>
+          )}
+        </div>
+
+        {/* Filter */}
         <div className="relative">
-          <select
-            value={viewSectionId}
-            onChange={(e) => setViewSectionId(e.target.value)}
-            className="appearance-none pl-3 pr-7 py-1.5 text-sm rounded-lg border border-border bg-transparent cursor-pointer"
+          <button
+            onClick={() => setShowFilterMenu(!showFilterMenu)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm border rounded-lg transition-colors ${
+              activeFilterLabel ? 'border-foreground/30 bg-muted text-foreground' : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted/50'
+            }`}
           >
-            <option value="all">View section ▾</option>
-            {schedule.sections.map(sec => (
-              <option key={sec.id} value={sec.id}>{sec.name}</option>
-            ))}
-          </select>
+            <span className="material-icons-outlined" style={{ fontSize: 16 }}>filter_list</span>
+            {activeFilterLabel || 'Filter'}
+            <span className="material-icons-outlined" style={{ fontSize: 14 }}>expand_more</span>
+          </button>
+          {showFilterMenu && (
+            <>
+              <div className="fixed inset-0 z-20" onClick={() => setShowFilterMenu(false)} />
+              <div className="absolute left-0 mt-1 w-52 bg-popover border border-border rounded-xl shadow-lg z-30 py-1">
+                {FILTER_OPTIONS.map(opt => (
+                  <button
+                    key={opt}
+                    onClick={() => { setFilterStatus(opt); setShowFilterMenu(false); }}
+                    className={`flex items-center justify-between w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left ${
+                      filterStatus === opt ? 'font-medium text-foreground' : 'text-muted-foreground'
+                    }`}
+                  >
+                    {opt}
+                    {filterStatus === opt && <span className="material-icons-outlined" style={{ fontSize: 14 }}>check</span>}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Sort */}
+        <div className="relative">
+          <button
+            onClick={() => setShowSortMenu(!showSortMenu)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-border rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          >
+            <span className="material-icons-outlined" style={{ fontSize: 16 }}>sort</span>
+            {activeSortLabel}
+            <span className="material-icons-outlined" style={{ fontSize: 14 }}>expand_more</span>
+          </button>
+          {showSortMenu && (
+            <>
+              <div className="fixed inset-0 z-20" onClick={() => setShowSortMenu(false)} />
+              <div className="absolute left-0 mt-1 w-52 bg-popover border border-border rounded-xl shadow-lg z-30 py-1">
+                <p className="px-3 py-1.5 text-xs font-medium text-muted-foreground">Sort By</p>
+                {SORT_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => { setSortBy(opt.value); setShowSortMenu(false); }}
+                    className={`flex items-center justify-between w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left ${
+                      sortBy === opt.value ? 'font-medium text-foreground' : 'text-muted-foreground'
+                    }`}
+                  >
+                    {opt.label}
+                    {sortBy === opt.value && <span className="material-icons-outlined" style={{ fontSize: 14 }}>check</span>}
+                  </button>
+                ))}
+                <div className="border-t border-border my-1" />
+                <p className="px-3 py-1.5 text-xs font-medium text-muted-foreground">Order</p>
+                <button
+                  onClick={() => { setSortOrder('asc'); setShowSortMenu(false); }}
+                  className={`flex items-center justify-between w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left ${sortOrder === 'asc' ? 'font-medium text-foreground' : 'text-muted-foreground'}`}
+                >
+                  Ascending
+                  {sortOrder === 'asc' && <span className="material-icons-outlined" style={{ fontSize: 14 }}>check</span>}
+                </button>
+                <button
+                  onClick={() => { setSortOrder('desc'); setShowSortMenu(false); }}
+                  className={`flex items-center justify-between w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left ${sortOrder === 'desc' ? 'font-medium text-foreground' : 'text-muted-foreground'}`}
+                >
+                  Descending
+                  {sortOrder === 'desc' && <span className="material-icons-outlined" style={{ fontSize: 14 }}>check</span>}
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="flex-1" />
 
-        {/* Search */}
-        <div className="relative">
-          <span className="material-icons-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" style={{ fontSize: 16 }}>search</span>
-          <input
-            type="text"
-            placeholder="Search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 pr-3 py-1.5 text-sm border border-border rounded-lg bg-background w-44 placeholder:text-muted-foreground outline-none"
-          />
+        {/* Stats */}
+        <div className="hidden lg:flex items-center gap-3 text-xs text-muted-foreground pr-2">
+          <span>{stats.total} products</span>
+          <span className="w-px h-3 bg-border" />
+          <span className="text-green-600 dark:text-green-400">{stats.approved} approved</span>
+          <span className="w-px h-3 bg-border" />
+          <span className="font-medium text-foreground">
+            A${stats.totalCost.toLocaleString('en-AU', { minimumFractionDigits: 2 })}
+          </span>
         </div>
 
-        {/* Filter */}
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="appearance-none px-3 py-1.5 text-sm border border-border rounded-lg bg-background cursor-pointer"
-          title="Filter by status"
-        >
-          <option value="All">All Statuses</option>
-          <option value="Draft">Draft</option>
-          <option value="Pending Approval">Pending Approval</option>
-          <option value="Approved">Approved</option>
-          <option value="Ordered">Ordered</option>
-          <option value="Installed">Installed</option>
-          <option value="Flagged">Flagged</option>
-        </select>
+        {/* Bulk actions */}
+        {selectedProducts.length > 0 && (
+          <div className="relative">
+            <button
+              onClick={() => setShowBulkMenu(!showBulkMenu)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-border rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            >
+              <span className="material-icons-outlined" style={{ fontSize: 15 }}>checklist</span>
+              {selectedProducts.length} selected
+              <span className="material-icons-outlined" style={{ fontSize: 14 }}>expand_more</span>
+            </button>
+            {showBulkMenu && (
+              <>
+                <div className="fixed inset-0 z-20" onClick={() => setShowBulkMenu(false)} />
+                <div className="absolute right-0 mt-1 w-52 bg-popover border border-border rounded-xl shadow-lg z-30 py-1">
+                  <p className="px-3 py-1.5 text-xs font-medium text-muted-foreground">Bulk Actions</p>
+                  <button onClick={() => { selectedProducts.forEach(id => { const p = allFilteredProducts.find(p => p.id === id); if (p) handleUpdateProduct(id, { ...p, status: 'Approved' }); }); setShowBulkMenu(false); }} className="w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">Change Status</button>
+                  <button className="w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">Copy to Project</button>
+                  <button onClick={() => { setShowExportModal(true); setShowBulkMenu(false); }} className="w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">Export PDF Schedule</button>
+                  <div className="border-t border-border my-1" />
+                  <button onClick={() => { selectedProducts.forEach(id => handleArchiveProduct(id)); setSelectedProducts([]); setShowBulkMenu(false); }} className="w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">Archive Selected</button>
+                  <button onClick={() => { selectedProducts.forEach(id => handleDeleteProduct(id)); setSelectedProducts([]); setShowBulkMenu(false); }} className="w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors text-red-500 hover:text-red-600">Remove Selected</button>
+                  <div className="border-t border-border my-1" />
+                  <button onClick={() => setSelectedProducts([])} className="w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">Clear Selection</button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Export */}
         <button
           onClick={() => setShowExportModal(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-border rounded-lg hover:bg-muted transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-border rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
         >
           <span className="material-icons-outlined" style={{ fontSize: 15 }}>picture_as_pdf</span>
           Export
         </button>
 
-        {/* New */}
+        {/* New Section */}
         <button
           onClick={handleAddSection}
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-foreground text-background rounded-lg hover:bg-foreground/90 transition-colors font-medium"
         >
           <span className="material-icons-outlined" style={{ fontSize: 16 }}>add</span>
-          New
+          New Section
         </button>
       </div>
 
-      {/* Bulk selection bar */}
-      {selectedProducts.length > 0 && (
-        <div className="flex items-center gap-3 px-4 py-2 bg-blue-50/50 dark:bg-blue-950/10 border-b border-border/50 text-xs">
-          <span className="font-medium">{selectedProducts.length} selected</span>
+      {/* ── Schedule Content — sits directly on page ── */}
+      <div className="pb-8">
+        {displaySections.map((section, sectionIndex) => (
+          <ScheduleSection
+            key={section.id}
+            section={section}
+            allSections={schedule.sections}
+            selectedProducts={selectedProducts}
+            onSelectProduct={handleSelectProduct}
+            onUpdateProduct={handleUpdateProduct}
+            onDeleteProduct={handleDeleteProduct}
+            onDuplicateProduct={handleDuplicateProduct}
+            onAddProductBelow={handleAddProductBelow}
+            onAddProduct={() => handleAddProduct(section.id)}
+            onMoveProductToSection={handleMoveProductToSection}
+            onArchiveProduct={handleArchiveProduct}
+            onAddFlagToProduct={handleAddFlagToProduct}
+            onToggleCollapse={() => handleToggleCollapse(section.id)}
+            onRenameSection={(name) => handleRenameSection(section.id, name)}
+            onDeleteSection={() => handleDeleteSection(section.id)}
+            onMoveUp={() => handleMoveSectionUp(section.id)}
+            onMoveDown={() => handleMoveSectionDown(section.id)}
+            canMoveUp={sectionIndex > 0}
+            canMoveDown={sectionIndex < displaySections.length - 1}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onDragEnd={handleDragEnd}
+            dragOverProductId={dragOverProductId}
+          />
+        ))}
+
+        {/* Add section */}
+        <div className="px-4 pt-4">
           <button
-            onClick={() => {
-              const all = allFilteredProducts.map(p => p.id);
-              if (selectedProducts.length === all.length) setSelectedProducts([]);
-              else setSelectedProducts(all);
-            }}
-            className="text-muted-foreground hover:text-foreground hover:underline"
+            onClick={handleAddSection}
+            className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground border border-dashed border-border rounded-xl px-4 py-3 w-full justify-center hover:bg-muted/20 transition-all"
           >
-            {selectedProducts.length === allFilteredProducts.length ? 'Deselect all' : 'Select all'}
-          </button>
-          <button
-            onClick={() => { selectedProducts.forEach(handleDeleteProduct); setSelectedProducts([]); }}
-            className="text-red-500 hover:text-red-600 hover:underline"
-          >
-            Delete selected
-          </button>
-          <button
-            onClick={() => setSelectedProducts([])}
-            className="text-muted-foreground hover:text-foreground hover:underline ml-auto"
-          >
-            Clear
+            <span className="material-icons-outlined" style={{ fontSize: 16 }}>add</span>
+            Add Section
           </button>
         </div>
-      )}
 
-      {/* Stats bar */}
-      <div className="flex items-center gap-3 px-4 py-1.5 text-xs text-muted-foreground border-b border-border/30">
-        <span>{stats.total} products</span>
-        <span className="w-px h-3 bg-border" />
-        <span className="text-green-600 dark:text-green-400">{stats.approved} approved</span>
-        <span className="text-amber-600 dark:text-amber-400">{stats.pending} pending</span>
-        <span className="text-blue-600 dark:text-blue-400">{stats.ordered} ordered</span>
-        <span className="w-px h-3 bg-border" />
-        <span className="font-medium text-foreground">
-          Total: A${stats.totalCost.toLocaleString('en-AU', { minimumFractionDigits: 2 })}
-        </span>
-      </div>
-
-      {/* Summary view */}
-      {viewMode === 'Summary' && (
-        <div>
-          {displaySections.map((section, sectionIndex) => (
-            <ScheduleSection
-              key={section.id}
-              section={section}
-              allSections={schedule.sections}
-              selectedProducts={selectedProducts}
-              onSelectProduct={handleSelectProduct}
-              onUpdateProduct={handleUpdateProduct}
-              onDeleteProduct={handleDeleteProduct}
-              onDuplicateProduct={handleDuplicateProduct}
-              onAddProductBelow={handleAddProductBelow}
-              onAddProduct={() => handleAddProduct(section.id)}
-              onMoveProductToSection={handleMoveProductToSection}
-              onArchiveProduct={handleArchiveProduct}
-              onAddFlagToProduct={handleAddFlagToProduct}
-              onToggleCollapse={() => handleToggleCollapse(section.id)}
-              onRenameSection={(name) => handleRenameSection(section.id, name)}
-              onDeleteSection={() => handleDeleteSection(section.id)}
-              onMoveUp={() => handleMoveSectionUp(section.id)}
-              onMoveDown={() => handleMoveSectionDown(section.id)}
-              canMoveUp={sectionIndex > 0}
-              canMoveDown={sectionIndex < displaySections.length - 1}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              onDragEnd={handleDragEnd}
-              dragOverProductId={dragOverProductId}
-            />
-          ))}
-
-          {/* Add section */}
-          <div className="px-4 py-4">
+        {/* Empty state */}
+        {schedule.sections.length === 0 && (
+          <div className="text-center py-20 text-muted-foreground">
+            <span className="material-icons-outlined mb-3 block" style={{ fontSize: 44 }}>table_chart</span>
+            <p className="text-sm font-medium mb-1">No sections yet</p>
+            <p className="text-xs mb-5">Add your first section to start building this schedule</p>
             <button
               onClick={handleAddSection}
-              className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground border border-dashed border-border rounded-lg px-4 py-2.5 w-full justify-center hover:bg-muted/30 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg hover:bg-foreground/90 transition-colors font-medium text-sm"
             >
-              <span className="material-icons-outlined" style={{ fontSize: 16 }}>add</span>
+              <span className="material-icons-outlined" style={{ fontSize: 18 }}>add</span>
               Add Section
             </button>
           </div>
+        )}
 
-          {displaySections.length === 0 && (searchQuery || filterStatus !== 'All') && (
-            <div className="text-center py-12 text-muted-foreground">
-              <p className="text-sm">No products match your filters</p>
-              <button
-                onClick={() => { setSearchQuery(''); setFilterStatus('All'); setViewSectionId('all'); }}
-                className="text-xs hover:underline mt-2"
-              >
-                Clear filters
-              </button>
-            </div>
-          )}
-
-          {schedule.sections.length === 0 && (
-            <div className="text-center py-16 text-muted-foreground">
-              <span className="material-icons-outlined mb-3" style={{ fontSize: 40 }}>table_chart</span>
-              <p className="text-sm font-medium">No sections yet</p>
-              <p className="text-xs mt-1 mb-4">Add your first section to get started</p>
-              <button
-                onClick={handleAddSection}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg hover:bg-foreground/90 transition-colors font-medium text-sm"
-              >
-                <span className="material-icons-outlined" style={{ fontSize: 18 }}>add</span>
-                Add Section
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Financial view */}
-      {viewMode === 'Financial' && (
-        <div className="px-4 py-4">
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
-            <table className="w-full text-xs">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="text-left px-4 py-2.5 font-medium">Product</th>
-                  <th className="text-left px-4 py-2.5 font-medium">DOC Code</th>
-                  <th className="text-left px-4 py-2.5 font-medium">Supplier</th>
-                  <th className="text-right px-4 py-2.5 font-medium">Unit Cost</th>
-                  <th className="text-right px-4 py-2.5 font-medium">Qty</th>
-                  <th className="text-right px-4 py-2.5 font-medium">Total</th>
-                  <th className="text-left px-4 py-2.5 font-medium">Status</th>
-                  <th className="text-left px-4 py-2.5 font-medium">Lead Time</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {allFilteredProducts.map(product => (
-                  <tr key={product.id} className="hover:bg-muted/20 transition-colors">
-                    <td className="px-4 py-2.5">
-                      <div className="font-medium">{product.name || 'Untitled'}</div>
-                      <div className="text-muted-foreground">{product.brand}</div>
-                    </td>
-                    <td className="px-4 py-2.5 text-muted-foreground uppercase tracking-wide">{product.docCode}</td>
-                    <td className="px-4 py-2.5 text-muted-foreground">{product.supplier}</td>
-                    <td className="px-4 py-2.5 text-right">
-                      {product.unitCost ? `A$${parseFloat(product.unitCost).toLocaleString('en-AU', { minimumFractionDigits: 2 })}` : '—'}
-                    </td>
-                    <td className="px-4 py-2.5 text-right">{product.quantity}</td>
-                    <td className="px-4 py-2.5 text-right font-medium">
-                      {product.unitCost
-                        ? `A$${(parseFloat(product.unitCost) * parseFloat(product.quantity || '1')).toLocaleString('en-AU', { minimumFractionDigits: 2 })}`
-                        : '—'}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-muted">{product.status}</span>
-                    </td>
-                    <td className="px-4 py-2.5 text-muted-foreground">{product.leadTime || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot className="bg-muted/50 font-medium">
-                <tr>
-                  <td colSpan={5} className="px-4 py-2.5 text-right">Schedule Total:</td>
-                  <td className="px-4 py-2.5 text-right">
-                    A${allFilteredProducts.reduce((s, p) =>
-                      s + parseFloat(p.unitCost || '0') * parseFloat(p.quantity || '1'), 0
-                    ).toLocaleString('en-AU', { minimumFractionDigits: 2 })}
-                  </td>
-                  <td colSpan={2} />
-                </tr>
-              </tfoot>
-            </table>
+        {displaySections.length === 0 && schedule.sections.length > 0 && (searchQuery || filterStatus !== 'All') && (
+          <div className="text-center py-12 text-muted-foreground">
+            <p className="text-sm">No products match your filters</p>
+            <button onClick={() => { setSearchQuery(''); setFilterStatus('All'); }} className="text-xs hover:underline mt-2">Clear filters</button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Export Modal */}
       {showExportModal && (
         <ExportScheduleModal
           schedule={schedule}
