@@ -1,8 +1,6 @@
 {
   "/page": "app/page.js",
   "/(app)/dashboard/page": "app/(app)/dashboard/page.js",
-  "/(app)/crm/clients/page": "app/(app)/crm/clients/page.js",
-  "/(app)/projects/[id]/page": "app/(app)/projects/[id]/page.js",
-  "/(app)/crm/leads/[id]/page": "app/(app)/crm/leads/[id]/page.js",
-  "/(app)/crm/clients/[id]/page": "app/(app)/crm/clients/[id]/page.js"
+  "/(app)/projects/page": "app/(app)/projects/page.js",
+  "/(app)/projects/[id]/page": "app/(app)/projects/[id]/page.js"
 }
