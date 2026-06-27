@@ -11,7 +11,7 @@ interface SidePanelProps {
   width?: string;
 }
 
-export function SidePanel({ title, subtitle, onClose, children, footer, width = 'min(45vw, 800px)' }: SidePanelProps) {
+export function SidePanel({ title, subtitle, onClose, children, footer, width = 'min(45vw, 820px)' }: SidePanelProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -32,19 +32,16 @@ export function SidePanel({ title, subtitle, onClose, children, footer, width = 
 
   return (
     <>
-      {/* Frosted overlay — no blur */}
+      {/* Frosted glass overlay — visible page, no text blur */}
       <div
-        className={`fixed inset-0 z-40 bg-black/20 transition-opacity duration-280 ${visible ? 'opacity-100' : 'opacity-0'}`}
+        className={`fixed inset-0 z-40 transition-opacity duration-280 ${visible ? 'opacity-100' : 'opacity-0'}`}
+        style={{ background: 'rgba(220,218,212,0.55)', backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)' }}
         onClick={handleClose}
       />
       {/* Panel */}
       <div
-        className={`fixed top-0 right-0 bottom-0 z-50 bg-card border-l border-border shadow-2xl flex flex-col transition-transform duration-280 ease-out`}
-        style={{
-          width,
-          minWidth: 480,
-          transform: visible ? 'translateX(0)' : 'translateX(100%)',
-        }}
+        className="fixed top-0 right-0 bottom-0 z-50 bg-card border-l border-border shadow-2xl flex flex-col transition-transform duration-280 ease-out"
+        style={{ width, minWidth: 480, transform: visible ? 'translateX(0)' : 'translateX(100%)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -58,8 +55,8 @@ export function SidePanel({ title, subtitle, onClose, children, footer, width = 
           </button>
         </div>
 
-        {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto min-h-0">
+        {/* Body — scrollable with thin scrollbar */}
+        <div className="flex-1 min-h-0 modal-scroll">
           {children}
         </div>
 

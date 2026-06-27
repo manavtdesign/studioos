@@ -192,41 +192,34 @@ export default function ProjectsPage() {
               {showFilterMenu && (
                 <>
                   <div className="fixed inset-0 z-20" onClick={() => setShowFilterMenu(false)} />
-                  <div className="absolute right-0 mt-1 w-64 bg-popover border border-border rounded-xl shadow-lg z-30 py-2 px-3 space-y-3">
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground block mb-1.5">Phase</label>
-                      <select
-                        value={phaseFilter}
-                        onChange={(e) => setPhaseFilter(e.target.value)}
-                        className="w-full text-sm border border-border rounded-lg px-2.5 py-1.5 bg-background outline-none"
-                      >
-                        {FILTER_PHASES.map(p => <option key={p}>{p}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground block mb-1.5">Status</label>
-                      <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="w-full text-sm border border-border rounded-lg px-2.5 py-1.5 bg-background outline-none"
-                      >
-                        {FILTER_STATUSES.map(s => <option key={s}>{s}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground block mb-1.5">Type</label>
-                      <select
-                        value={typeFilter}
-                        onChange={(e) => setTypeFilter(e.target.value)}
-                        className="w-full text-sm border border-border rounded-lg px-2.5 py-1.5 bg-background outline-none"
-                      >
-                        {FILTER_TYPES.map(t => <option key={t}>{t}</option>)}
-                      </select>
-                    </div>
-                    {hasActiveFilters && (
-                      <button onClick={() => { clearFilters(); setShowFilterMenu(false); }} className="text-xs text-muted-foreground hover:text-foreground underline">
-                        Clear filters
+                  <div className="absolute right-0 mt-1 w-52 bg-popover border border-border rounded-xl shadow-lg z-30 py-2 overflow-hidden">
+                    <p className="px-3 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">Phase</p>
+                    {FILTER_PHASES.map(p => (
+                      <button key={p} onClick={() => setPhaseFilter(p)}
+                        className={`filter-item ${phaseFilter === p ? 'filter-item-active' : 'filter-item-inactive'}`}>
+                        {p}{phaseFilter === p && <span className="material-icons-outlined" style={{ fontSize: 13 }}>check</span>}
                       </button>
+                    ))}
+                    <div className="border-t border-border/40 my-1" />
+                    <p className="px-3 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</p>
+                    {['All Statuses', 'Active', 'On Hold', 'Completed'].map(s => (
+                      <button key={s} onClick={() => setStatusFilter(s)}
+                        className={`filter-item ${statusFilter === s ? 'filter-item-active' : 'filter-item-inactive'}`}>
+                        {s}{statusFilter === s && <span className="material-icons-outlined" style={{ fontSize: 13 }}>check</span>}
+                      </button>
+                    ))}
+                    <div className="border-t border-border/40 my-1" />
+                    <p className="px-3 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">Type</p>
+                    {FILTER_TYPES.map(t => (
+                      <button key={t} onClick={() => setTypeFilter(t)}
+                        className={`filter-item ${typeFilter === t ? 'filter-item-active' : 'filter-item-inactive'}`}>
+                        {t}{typeFilter === t && <span className="material-icons-outlined" style={{ fontSize: 13 }}>check</span>}
+                      </button>
+                    ))}
+                    {hasActiveFilters && (
+                      <div className="border-t border-border/40 px-3 pt-2 pb-1">
+                        <button onClick={() => { clearFilters(); setShowFilterMenu(false); }} className="text-xs text-muted-foreground hover:text-foreground">Clear filters</button>
+                      </div>
                     )}
                   </div>
                 </>
