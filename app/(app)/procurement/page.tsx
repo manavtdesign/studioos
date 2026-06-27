@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 const categories = ['All Vendors', 'Furniture', 'Lighting', 'Finishes', 'Textiles', 'Plumbing', 'Appliances', 'Decor', 'Artwork', 'Materials', 'Hardware'];
 
@@ -16,61 +16,88 @@ const allVendors = [
 ];
 
 export default function VendorLibraryPage() {
+  const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All Vendors');
   const [showFilterMenu, setShowFilterMenu] = useState(false);
 
-  const filtered = allVendors.filter(
-    (v) => categoryFilter === 'All Vendors' || v.category === categoryFilter
-  );
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return allVendors.filter(v => {
+      const matchCat = categoryFilter === 'All Vendors' || v.category === categoryFilter;
+      const matchSearch = !search || v.name.toLowerCase().includes(q) || v.category.toLowerCase().includes(q) || v.contact.toLowerCase().includes(q);
+      return matchCat && matchSearch;
+    });
+  }, [search, categoryFilter]);
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Vendor Library</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Your supplier and contractor database</p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Category filter */}
-          <div className="relative">
-            <button
-              onClick={() => setShowFilterMenu(!showFilterMenu)}
-              className="notion-button border border-border gap-1.5"
-            >
-              <span className="material-icons-outlined" style={{ fontSize: 16 }}>filter_list</span>
-              {categoryFilter === 'All Vendors' ? 'Category' : categoryFilter}
-              <span className="material-icons-outlined" style={{ fontSize: 14 }}>expand_more</span>
-            </button>
-            {showFilterMenu && (
-              <div className="absolute right-0 mt-1 w-48 bg-popover border border-border rounded-xl shadow-lg z-20 py-1">
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => { setCategoryFilter(cat); setShowFilterMenu(false); }}
-                    className={`flex items-center justify-between w-full px-4 py-2 text-sm text-left hover:bg-muted transition-colors ${
-                      categoryFilter === cat ? 'text-foreground font-medium' : 'text-muted-foreground'
-                    }`}
-                  >
-                    {cat}
-                    {categoryFilter === cat && (
-                      <span className="material-icons-outlined" style={{ fontSize: 14 }}>check</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <button className="notion-button bg-foreground text-background hover:bg-foreground/90">
-            <span className="material-icons-outlined" style={{ fontSize: 16 }}>add</span>
-            Add Vendor
-          </button>
-        </div>
+      <div>
+        <h1 className="text-2xl font-semibold">Vendor Library</h1>
+        <p className="text-muted-foreground text-sm mt-0.5">Your supplier and contractor database</p>
       </div>
 
-      {/* Table */}
+      {/* Toolbar */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex-1" />
+
+        <div className="relative">
+          <span className="material-icons-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" style={{ fontSize: 16 }}>search</span>
+          <input
+            type="text"
+            placeholder="Search vendors..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8 pr-3 py-1.5 text-sm border border-border rounded-lg bg-background w-52 placeholder:text-muted-foreground outline-none focus:border-foreground/30 transition-colors"
+          />
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+              <span className="material-icons-outlined" style={{ fontSize: 14 }}>close</span>
+            </button>
+          )}
+        </div>
+
+        <div className="relative">
+          <button
+            onClick={() => setShowFilterMenu(!showFilterMenu)}
+            title="Filter by category"
+            className={`relative flex items-center justify-center w-9 h-9 border rounded-lg transition-colors ${
+              categoryFilter !== 'All Vendors' ? 'border-foreground/30 bg-muted text-foreground' : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted/50'
+            }`}
+          >
+            <span className="material-icons-outlined" style={{ fontSize: 18 }}>filter_list</span>
+            {categoryFilter !== 'All Vendors' && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-foreground" />}
+          </button>
+          {showFilterMenu && (
+            <>
+              <div className="fixed inset-0 z-20" onClick={() => setShowFilterMenu(false)} />
+              <div className="absolute right-0 mt-1 w-48 bg-popover border border-border rounded-xl shadow-lg z-30 py-1 overflow-hidden">
+                <div className="max-h-64 overflow-y-auto dropdown-scroll">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => { setCategoryFilter(cat); setShowFilterMenu(false); }}
+                      className={`flex items-center justify-between w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors ${
+                        categoryFilter === cat ? 'text-foreground font-medium' : 'text-muted-foreground'
+                      }`}
+                    >
+                      {cat}
+                      {categoryFilter === cat && (
+                        <span className="material-icons-outlined" style={{ fontSize: 14 }}>check</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-foreground text-background rounded-lg hover:bg-foreground/90 transition-colors font-medium">
+          <span className="material-icons-outlined" style={{ fontSize: 16 }}>add</span>
+          Add Vendor
+        </button>
+      </div>
+
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <table className="w-full">
           <thead>
@@ -87,10 +114,8 @@ export default function VendorLibraryPage() {
             {filtered.map((vendor) => (
               <tr key={vendor.id} className="hover:bg-muted/20 cursor-pointer border-b border-border/50 last:border-b-0">
                 <td className="table-cell">
-                  <div>
-                    <p className="font-medium">{vendor.name}</p>
-                    <p className="text-xs text-muted-foreground">{vendor.email}</p>
-                  </div>
+                  <p className="font-medium">{vendor.name}</p>
+                  <p className="text-xs text-muted-foreground">{vendor.email}</p>
                 </td>
                 <td className="table-cell text-muted-foreground">{vendor.category}</td>
                 <td className="table-cell text-muted-foreground">{vendor.contact}</td>
@@ -110,7 +135,7 @@ export default function VendorLibraryPage() {
             {filtered.length === 0 && (
               <tr>
                 <td colSpan={6} className="table-cell text-center text-muted-foreground py-10">
-                  No vendors in this category.
+                  No vendors match your search.
                 </td>
               </tr>
             )}

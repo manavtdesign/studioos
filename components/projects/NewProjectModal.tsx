@@ -6,6 +6,7 @@ import { ClientSelect } from './ClientSelect';
 import { DesignerSelect } from '@/components/crm/DesignerSelect';
 import { NewClientModal } from '@/components/crm/NewClientModal';
 import { DatePicker } from '@/components/ui/DatePicker';
+import { SidePanel } from '@/components/ui/SidePanel';
 
 interface NewProjectModalProps {
   onClose: () => void;
@@ -31,7 +32,6 @@ export interface NewProjectData {
 
 export function NewProjectModal({ onClose, onSave }: NewProjectModalProps) {
   const [showClientModal, setShowClientModal] = useState(false);
-
   const [form, setForm] = useState({
     name: '',
     clientId: '',
@@ -61,116 +61,104 @@ export function NewProjectModal({ onClose, onSave }: NewProjectModalProps) {
   return (
     <>
       {showClientModal && <NewClientModal onClose={() => setShowClientModal(false)} />}
-
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-        <div className="relative bg-card border border-border rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col mx-4 overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-border sticky top-0 bg-card z-10">
-            <h2 className="font-semibold">New Project</h2>
-            <button onClick={onClose} className="p-1.5 hover:bg-muted rounded-lg">
-              <span className="material-icons-outlined" style={{ fontSize: 18 }}>close</span>
-            </button>
+      <SidePanel
+        title="New Project"
+        onClose={onClose}
+        footer={
+          <>
+            <div />
+            <div className="flex items-center gap-2">
+              <button onClick={onClose} className="notion-button border border-border">Cancel</button>
+              <button
+                onClick={handleSave}
+                disabled={!form.name || !form.clientId}
+                className="notion-button bg-foreground text-background hover:bg-foreground/90 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Create Project
+              </button>
+            </div>
+          </>
+        }
+      >
+        <div className="px-6 py-5 space-y-6">
+          {/* Client */}
+          <div>
+            <SectionLabel>Client</SectionLabel>
+            <Field label="Select Existing Client" required>
+              <ClientSelect
+                value={form.clientId}
+                onChange={(id) => set('clientId', id)}
+                onAddNew={() => setShowClientModal(true)}
+              />
+            </Field>
           </div>
 
-          <div className="px-6 py-5 space-y-6 modal-scroll flex-1 min-h-0">
-            {/* Client Selection */}
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Client</p>
-              <Field label="Select Existing Client" required>
-                <ClientSelect
-                  value={form.clientId}
-                  onChange={(id) => set('clientId', id)}
-                  onAddNew={() => setShowClientModal(true)}
-                />
+          {/* Project Details */}
+          <div>
+            <SectionLabel>Project Details</SectionLabel>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Project Name" required>
+                <input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Hampton Residence" className="modal-input" />
+              </Field>
+              <Field label="Project Type">
+                <select value={form.projectType} onChange={(e) => set('projectType', e.target.value as ProjectType)} className="modal-input">
+                  {PROJECT_TYPES.map((t) => <option key={t}>{t}</option>)}
+                </select>
+              </Field>
+              <Field label="Project Address" className="col-span-2">
+                <input value={form.address} onChange={(e) => set('address', e.target.value)} placeholder="24 Balmoral Avenue, Mosman NSW 2088" className="modal-input" />
+              </Field>
+              <Field label="Description" className="col-span-2">
+                <textarea value={form.description} onChange={(e) => set('description', e.target.value)} rows={3} placeholder="Brief description of the project..." className="modal-input resize-none" />
+              </Field>
+              <Field label="Current Phase">
+                <select value={form.currentPhase} onChange={(e) => set('currentPhase', e.target.value as ProjectPhase)} className="modal-input">
+                  {PROJECT_PHASES.map((p) => <option key={p}>{p}</option>)}
+                </select>
+              </Field>
+              <Field label="Project Status">
+                <select value={form.status} onChange={(e) => set('status', e.target.value as ProjectStatus)} className="modal-input">
+                  {PROJECT_STATUSES.filter((s) => s !== 'Archived').map((s) => <option key={s}>{s}</option>)}
+                </select>
+              </Field>
+              <Field label="Estimated Budget">
+                <input value={form.estimatedBudget} onChange={(e) => set('estimatedBudget', e.target.value)} placeholder="$320,000" className="modal-input" />
+              </Field>
+              <Field label="Project Manager">
+                <DesignerSelect value={form.projectManager} onChange={(v) => set('projectManager', v)} />
+              </Field>
+              <Field label="Start Date">
+                <DatePicker value={form.startDate} onChange={(v) => set('startDate', v)} placeholder="Select date" />
+              </Field>
+              <Field label="Target Completion">
+                <DatePicker value={form.targetCompletion} onChange={(v) => set('targetCompletion', v)} placeholder="Select date" />
               </Field>
             </div>
-
-            {/* Project Details */}
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Project Details</p>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Project Name" required>
-                  <input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Hampton Residence" className="modal-input" />
-                </Field>
-                <Field label="Project Type">
-                  <select value={form.projectType} onChange={(e) => set('projectType', e.target.value)} className="modal-input">
-                    {PROJECT_TYPES.map((t) => <option key={t}>{t}</option>)}
-                  </select>
-                </Field>
-                <Field label="Project Address" className="col-span-2">
-                  <input value={form.address} onChange={(e) => set('address', e.target.value)} placeholder="24 Balmoral Avenue, Mosman NSW 2088" className="modal-input" />
-                </Field>
-                <Field label="Description" className="col-span-2">
-                  <textarea
-                    value={form.description}
-                    onChange={(e) => set('description', e.target.value)}
-                    rows={3}
-                    placeholder="Brief description of the project..."
-                    className="modal-input resize-none"
-                  />
-                </Field>
-                <Field label="Current Phase">
-                  <select value={form.currentPhase} onChange={(e) => set('currentPhase', e.target.value as ProjectPhase)} className="modal-input">
-                    {PROJECT_PHASES.map((p) => <option key={p}>{p}</option>)}
-                  </select>
-                </Field>
-                <Field label="Project Status">
-                  <select value={form.status} onChange={(e) => set('status', e.target.value as ProjectStatus)} className="modal-input">
-                    {PROJECT_STATUSES.filter((s) => s !== 'Archived').map((s) => <option key={s}>{s}</option>)}
-                  </select>
-                </Field>
-                <Field label="Estimated Budget">
-                  <input value={form.estimatedBudget} onChange={(e) => set('estimatedBudget', e.target.value)} placeholder="$320,000" className="modal-input" />
-                </Field>
-                <Field label="Project Manager">
-                  <DesignerSelect value={form.projectManager} onChange={(v) => set('projectManager', v)} />
-                </Field>
-                <Field label="Start Date">
-                  <DatePicker value={form.startDate} onChange={(v) => set('startDate', v)} placeholder="Select date" />
-                </Field>
-                <Field label="Target Completion">
-                  <DatePicker value={form.targetCompletion} onChange={(v) => set('targetCompletion', v)} placeholder="Select date" />
-                </Field>
-              </div>
-            </div>
-
-            {/* Additional Information */}
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Additional Information</p>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Builder">
-                  <input value={form.builder} onChange={(e) => set('builder', e.target.value)} placeholder="Pacific Constructions" className="modal-input" />
-                </Field>
-                <Field label="Architect">
-                  <input value={form.architect} onChange={(e) => set('architect', e.target.value)} placeholder="Studio Architecture" className="modal-input" />
-                </Field>
-                <Field label="Site Notes" className="col-span-2">
-                  <textarea
-                    value={form.siteNotes}
-                    onChange={(e) => set('siteNotes', e.target.value)}
-                    rows={2}
-                    placeholder="Access instructions, parking, council requirements..."
-                    className="modal-input resize-none"
-                  />
-                </Field>
-              </div>
-            </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border flex-shrink-0">
-            <button onClick={onClose} className="notion-button border border-border">Cancel</button>
-            <button
-              onClick={handleSave}
-              disabled={!form.name || !form.clientId}
-              className="notion-button bg-foreground text-background hover:bg-foreground/90 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Create Project
-            </button>
+          {/* Additional Information */}
+          <div>
+            <SectionLabel>Additional Information</SectionLabel>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Builder">
+                <input value={form.builder} onChange={(e) => set('builder', e.target.value)} placeholder="Pacific Constructions" className="modal-input" />
+              </Field>
+              <Field label="Architect">
+                <input value={form.architect} onChange={(e) => set('architect', e.target.value)} placeholder="Studio Architecture" className="modal-input" />
+              </Field>
+              <Field label="Site Notes" className="col-span-2">
+                <textarea value={form.siteNotes} onChange={(e) => set('siteNotes', e.target.value)} rows={2} placeholder="Access instructions, parking, council requirements..." className="modal-input resize-none" />
+              </Field>
+            </div>
           </div>
         </div>
-      </div>
+      </SidePanel>
     </>
   );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">{children}</p>;
 }
 
 function Field({ label, required, children, className }: { label: string; required?: boolean; children: React.ReactNode; className?: string }) {

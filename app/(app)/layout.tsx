@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
@@ -8,132 +8,239 @@ import { DesignerProvider } from '@/lib/designer-context';
 import { NotificationProvider } from '@/lib/notification-context';
 import { NotificationCenter } from '@/components/NotificationCenter';
 import { UserMenu } from '@/components/UserMenu';
+import { mockProjects } from '@/lib/projects-data';
+import { mockClients } from '@/lib/crm-data';
 
-const topNav = [
-  { label: 'Dashboard', iconFilled: 'space_dashboard', iconOutlined: 'space_dashboard', href: '/dashboard' },
-  { label: 'Projects', iconFilled: 'folder', iconOutlined: 'folder_open', href: '/projects' },
-];
+const USER_NAME = 'Ellie Sanders';
 
-const crmChildren = [
-  { label: 'Leads', href: '/crm/leads' },
-  { label: 'Clients', href: '/crm/clients' },
-];
-
-const bottomNav = [
-  { label: 'Vendor Library', iconFilled: 'store', iconOutlined: 'store', href: '/procurement' },
-  { label: 'Tasks', iconFilled: 'task_alt', iconOutlined: 'task_alt', href: '/tasks' },
-  { label: 'Finance', iconFilled: 'account_balance_wallet', iconOutlined: 'account_balance_wallet', href: '/finance' },
-];
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((n) => n[0].toUpperCase())
+    .join('');
+}
 
 function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-
   useEffect(() => setMounted(true), []);
-  if (!mounted) return <div className="w-14 h-7 rounded-full bg-muted" />;
-
-  const isDark = theme === 'dark';
+  if (!mounted) return <div className="w-8 h-8" />;
   return (
     <button
-      onClick={() => setTheme(isDark ? 'light' : 'dark')}
-      className={`relative flex items-center w-14 h-7 rounded-full transition-colors duration-300 ${isDark ? 'bg-[#333]' : 'bg-[#e0e0e0]'}`}
-      title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+      className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+      title={resolvedTheme === 'dark' ? 'Light mode' : 'Dark mode'}
     >
-      <span
-        className={`absolute flex items-center justify-center w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${isDark ? 'translate-x-8' : 'translate-x-1'}`}
-      >
-        <span className="material-icons-outlined" style={{ fontSize: 13, color: isDark ? '#444' : '#f59e0b' }}>
-          {isDark ? 'dark_mode' : 'light_mode'}
-        </span>
+      <span className="material-icons-outlined" style={{ fontSize: 18 }}>
+        {resolvedTheme === 'dark' ? 'light_mode' : 'dark_mode'}
       </span>
     </button>
   );
 }
 
-interface NavItemProps {
-  href: string;
-  iconFilled: string;
-  iconOutlined: string;
-  label: string;
-  active: boolean;
-}
+const topNav = [
+  { href: '/dashboard', iconFilled: 'dashboard', iconOutlined: 'dashboard', label: 'Dashboard' },
+  { href: '/projects', iconFilled: 'folder', iconOutlined: 'folder_open', label: 'Projects' },
+];
+const crmChildren = [
+  { href: '/crm/leads', label: 'Leads' },
+  { href: '/crm/clients', label: 'Clients' },
+];
+const bottomNav = [
+  { href: '/procurement', iconFilled: 'store', iconOutlined: 'store', label: 'Vendor Library' },
+  { href: '/tasks', iconFilled: 'task_alt', iconOutlined: 'task_alt', label: 'Tasks' },
+  { href: '/finance', iconFilled: 'receipt_long', iconOutlined: 'receipt_long', label: 'Finance' },
+];
+
+interface NavItemProps { href: string; iconFilled: string; iconOutlined: string; label: string; active: boolean }
 
 function NavItem({ href, iconFilled, iconOutlined, label, active }: NavItemProps) {
   return (
-    <Link href={href} className={`sidebar-item ${active ? 'active' : ''}`}>
-      {active ? (
-        <span className="material-icons nav-icon" style={{ fontSize: 18 }}>{iconFilled}</span>
-      ) : (
-        <span className="material-icons-outlined nav-icon" style={{ fontSize: 18 }}>{iconOutlined}</span>
-      )}
+    <Link
+      href={href}
+      className={`sidebar-item ${active ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+    >
+      <span className={`nav-icon ${active ? 'material-icons' : 'material-icons-outlined'}`}>{active ? iconFilled : iconOutlined}</span>
       <span className="nav-label">{label}</span>
     </Link>
   );
 }
 
+// ── Global Search ────────────────────────────────────────────────────────────
+
+type SearchResult = { type: string; label: string; sub?: string; href: string };
+
+const hardcodedTasks: SearchResult[] = [
+  { type: 'Tasks', label: 'Kitchen Layout Review', sub: 'Hampton Residence', href: '/tasks' },
+  { type: 'Tasks', label: 'Material Board Presentation', sub: 'Darling Point Apartment', href: '/tasks' },
+  { type: 'Tasks', label: 'Site Measure', sub: 'Vaucluse House', href: '/tasks' },
+];
+
+function GlobalSearch() {
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('keydown', key);
+    return () => { document.removeEventListener('mousedown', handler); document.removeEventListener('keydown', key); };
+  }, []);
+
+  const results = useMemo((): { group: string; items: SearchResult[] }[] => {
+    if (!query.trim()) return [];
+    const q = query.toLowerCase();
+
+    const projectResults: SearchResult[] = mockProjects
+      .filter(p => p.name.toLowerCase().includes(q) || p.address.toLowerCase().includes(q))
+      .slice(0, 4)
+      .map(p => ({ type: 'Projects', label: p.name, sub: p.address, href: `/projects/${p.id}` }));
+
+    const clientResults: SearchResult[] = mockClients
+      .filter(c => c.primaryContact.toLowerCase().includes(q) || c.company.toLowerCase().includes(q))
+      .slice(0, 3)
+      .map(c => ({ type: 'Clients', label: c.primaryContact, sub: c.company, href: `/crm/clients/${c.id}` }));
+
+    const taskResults: SearchResult[] = hardcodedTasks
+      .filter(t => t.label.toLowerCase().includes(q))
+      .slice(0, 3);
+
+    const grouped: { group: string; items: SearchResult[] }[] = [];
+    if (projectResults.length) grouped.push({ group: 'Projects', items: projectResults });
+    if (clientResults.length) grouped.push({ group: 'Clients', items: clientResults });
+    if (taskResults.length) grouped.push({ group: 'Tasks', items: taskResults });
+    return grouped;
+  }, [query]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && results.length > 0) {
+      window.location.href = results[0].items[0].href;
+    }
+  };
+
+  function Highlight({ text }: { text: string }) {
+    const q = query.toLowerCase();
+    const idx = text.toLowerCase().indexOf(q);
+    if (idx === -1 || !query) return <>{text}</>;
+    return (
+      <>
+        {text.slice(0, idx)}
+        <mark className="bg-foreground/10 text-foreground rounded px-0.5">{text.slice(idx, idx + query.length)}</mark>
+        {text.slice(idx + query.length)}
+      </>
+    );
+  }
+
+  return (
+    <div className="relative w-56" ref={ref}>
+      <div className="relative">
+        <span className="material-icons-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" style={{ fontSize: 16 }}>search</span>
+        <input
+          type="text"
+          placeholder="Search..."
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={handleKeyDown}
+          className="w-full pl-8 pr-3 py-1.5 text-sm border border-border rounded-lg bg-muted/40 placeholder:text-muted-foreground outline-none focus:border-foreground/30 transition-colors"
+        />
+      </div>
+      {open && query.trim().length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-1.5 bg-popover border border-border rounded-xl shadow-xl z-[60] overflow-hidden">
+          {results.length === 0 ? (
+            <p className="px-4 py-3 text-sm text-muted-foreground">No results found</p>
+          ) : (
+            <div className="max-h-72 overflow-y-auto dropdown-scroll">
+              {results.map(({ group, items }) => (
+                <div key={group}>
+                  <p className="px-3 py-1.5 text-xs font-medium text-muted-foreground border-b border-border/50 bg-muted/30">
+                    {group}
+                  </p>
+                  {items.map((item, i) => (
+                    <Link
+                      key={i}
+                      href={item.href}
+                      onClick={() => { setOpen(false); setQuery(''); }}
+                      className="flex items-start gap-3 px-3 py-2.5 hover:bg-muted transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm text-foreground leading-tight">
+                          <Highlight text={item.label} />
+                        </p>
+                        {item.sub && (
+                          <p className="text-xs text-muted-foreground mt-0.5 truncate">{item.sub}</p>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main Layout ──────────────────────────────────────────────────────────────
+
 function AppLayoutInner({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isCrmActive = pathname.startsWith('/crm');
-  const [crmOpen, setCrmOpen] = useState(isCrmActive);
 
-  useEffect(() => {
-    if (isCrmActive) setCrmOpen(true);
-  }, [isCrmActive]);
-
-  const isActive = (href: string) => {
+  function isActive(href: string) {
     if (href === '/dashboard') return pathname === '/dashboard';
     return pathname.startsWith(href);
-  };
+  }
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Permanent Sidebar */}
-      <aside className="flex flex-col w-52 bg-card border-r border-border flex-shrink-0">
-        <div className="h-14 flex items-center px-4">
-          <span className="text-sm font-semibold text-foreground tracking-tight">Design Studio HQ</span>
+      {/* Sidebar */}
+      <aside className="w-52 flex-shrink-0 border-r border-border bg-card flex flex-col">
+        {/* Logo */}
+        <div className="px-4 py-4 border-b border-border">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-foreground flex items-center justify-center flex-shrink-0">
+              <span className="text-background text-xs font-bold">S</span>
+            </div>
+            <span className="font-semibold text-sm tracking-tight">StudioOS</span>
+          </Link>
         </div>
 
-        <nav className="flex-1 px-2.5 pb-4 space-y-0.5 overflow-y-auto">
+        {/* Nav */}
+        <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
+          {/* Top nav */}
           {topNav.map((item) => (
             <NavItem key={item.href} {...item} active={isActive(item.href)} />
           ))}
 
-          {/* CRM — single icon parent + children */}
-          <div>
-            <button
-              onClick={() => setCrmOpen(!crmOpen)}
-              className={`sidebar-item w-full ${isCrmActive ? 'active' : ''}`}
-            >
-              {isCrmActive ? (
-                <span className="material-icons nav-icon" style={{ fontSize: 18 }}>people</span>
-              ) : (
-                <span className="material-icons-outlined nav-icon" style={{ fontSize: 18 }}>people</span>
-              )}
-              <span className="nav-label flex-1 text-left">CRM</span>
-              <span className={`material-icons-outlined nav-icon transition-transform duration-150 ${crmOpen ? 'rotate-180' : ''}`} style={{ fontSize: 14 }}>
-                expand_more
-              </span>
-            </button>
-
-            {crmOpen && (
-              <div className="ml-5 pl-2.5 border-l border-border mt-0.5 space-y-0.5">
-                {crmChildren.map((child) => (
-                  <Link
-                    key={child.href}
-                    href={child.href}
-                    className={`flex items-center px-2 py-1.5 rounded text-sm transition-colors ${
-                      pathname.startsWith(child.href)
-                        ? 'text-foreground font-medium bg-muted'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                    }`}
-                  >
-                    {child.label}
-                  </Link>
-                ))}
-              </div>
-            )}
+          {/* CRM — static section heading */}
+          <div className="pt-4 pb-1 px-2">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">CRM</p>
           </div>
+          {crmChildren.map((child) => (
+            <Link
+              key={child.href}
+              href={child.href}
+              className={`sidebar-item pl-4 ${isActive(child.href) ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+            >
+              <span className={`nav-icon ${isActive(child.href) ? 'material-icons' : 'material-icons-outlined'}`}>
+                {child.href === '/crm/leads' ? 'person_add' : 'people'}
+              </span>
+              <span className="nav-label">{child.label}</span>
+            </Link>
+          ))}
 
+          <div className="pt-2" />
+
+          {/* Bottom nav */}
           {bottomNav.map((item) => (
             <NavItem key={item.href} {...item} active={isActive(item.href)} />
           ))}
@@ -141,24 +248,21 @@ function AppLayoutInner({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto min-w-0">
-        <header className="h-14 bg-background flex items-center justify-between px-6 sticky top-0 z-10">
-          <div className="search-input flex-1 max-w-md">
-            <span className="material-icons-outlined" style={{ fontSize: 16 }}>search</span>
-            <input
-              type="text"
-              placeholder="Search projects, clients, vendors and more"
-              className="bg-transparent outline-none w-full text-sm placeholder:text-muted-foreground"
-            />
-          </div>
-          <div className="flex items-center gap-3 ml-4 flex-shrink-0">
-            <ThemeToggle />
-            <NotificationCenter />
-            <UserMenu />
-          </div>
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="h-14 flex-shrink-0 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10 px-4 flex items-center justify-end gap-2">
+          <GlobalSearch />
+          <ThemeToggle />
+          <NotificationCenter />
+          <UserMenu />
         </header>
 
-        <div className="px-6 pb-6">{children}</div>
+        {/* Content */}
+        <div className="flex-1 overflow-auto">
+          <div className="px-6 pb-6 pt-5">
+            {children}
+          </div>
+        </div>
       </main>
     </div>
   );

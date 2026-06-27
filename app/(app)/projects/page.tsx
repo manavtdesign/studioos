@@ -177,18 +177,17 @@ export default function ProjectsPage() {
               )}
             </div>
 
-            {/* Filter */}
+            {/* Filter — icon only */}
             <div className="relative">
               <button
                 onClick={() => setShowFilterMenu(!showFilterMenu)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm border rounded-lg transition-colors ${
+                title="Filter"
+                className={`relative flex items-center justify-center w-9 h-9 border rounded-lg transition-colors ${
                   hasActiveFilters ? 'border-foreground/30 bg-muted text-foreground' : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
               >
-                <span className="material-icons-outlined" style={{ fontSize: 16 }}>filter_list</span>
-                Filter
-                {hasActiveFilters && <span className="w-1.5 h-1.5 rounded-full bg-foreground flex-shrink-0" />}
-                <span className="material-icons-outlined" style={{ fontSize: 14 }}>expand_more</span>
+                <span className="material-icons-outlined" style={{ fontSize: 18 }}>filter_list</span>
+                {hasActiveFilters && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-foreground" />}
               </button>
               {showFilterMenu && (
                 <>
@@ -234,15 +233,14 @@ export default function ProjectsPage() {
               )}
             </div>
 
-            {/* Sort */}
+            {/* Sort — icon only */}
             <div className="relative">
               <button
                 onClick={() => setShowSortMenu(!showSortMenu)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-border rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                title="Sort"
+                className="flex items-center justify-center w-9 h-9 border border-border rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
               >
-                <span className="material-icons-outlined" style={{ fontSize: 16 }}>sort</span>
-                {activeSortLabel}
-                <span className="material-icons-outlined" style={{ fontSize: 14 }}>expand_more</span>
+                <span className="material-icons-outlined" style={{ fontSize: 18 }}>sort</span>
               </button>
               {showSortMenu && (
                 <>

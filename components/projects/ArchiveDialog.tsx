@@ -9,7 +9,7 @@ interface ArchiveDialogProps {
 export function ArchiveDialog({ projectName, onConfirm, onCancel }: ArchiveDialogProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
+      <div className="absolute inset-0 bg-black/20" onClick={onCancel} />
       <div className="relative bg-card border border-border rounded-2xl shadow-xl w-full max-w-sm mx-4 overflow-hidden">
         <div className="px-6 py-5">
           <div className="flex items-center gap-3 mb-3">
