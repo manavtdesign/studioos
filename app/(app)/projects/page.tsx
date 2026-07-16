@@ -174,12 +174,12 @@ export default function ProjectsPage() {
                 className={`relative toolbar-icon-btn ${hasTypeFilter ? 'toolbar-icon-btn-active' : ''}`}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }}>event_list</span>
-                {hasTypeFilter && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-foreground" />}
+                {hasTypeFilter && <span className="filter-dot-above" />}
               </button>
               {showTypeMenu && (
                 <>
                   <div className="fixed inset-0 z-20" onClick={() => setShowTypeMenu(false)} />
-                  <div className="absolute right-0 mt-1 w-52 bg-popover border border-border rounded-xl shadow-lg z-30 py-2">
+                  <div className="absolute right-0 mt-1 w-64 bg-popover border border-border rounded-xl shadow-lg z-30 py-2">
                     <p className="px-3 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Project Types</p>
                     {FILTER_TYPES.map(t => (
                       <button key={t} onClick={() => { setTypeFilter(t); setShowTypeMenu(false); }}
@@ -200,12 +200,12 @@ export default function ProjectsPage() {
                 className={`relative toolbar-icon-btn ${hasActiveFilters ? 'toolbar-icon-btn-active' : ''}`}
               >
                 <span className="material-icons-outlined" style={{ fontSize: 18 }}>filter_list</span>
-                {hasActiveFilters && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-foreground" />}
+                {hasActiveFilters && <span className="filter-dot-above" />}
               </button>
               {showFilterMenu && (
                 <>
                   <div className="fixed inset-0 z-20" onClick={() => setShowFilterMenu(false)} />
-                  <div className="absolute right-0 mt-1 w-52 bg-popover border border-border rounded-xl shadow-lg z-30 py-2 overflow-hidden">
+                  <div className="absolute right-0 mt-1 w-64 bg-popover border border-border rounded-xl shadow-lg z-30 py-2 overflow-hidden">
                     <p className="px-3 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">Phase</p>
                     {FILTER_PHASES.map(p => (
                       <button key={p} onClick={() => setPhaseFilter(p)}
@@ -223,7 +223,7 @@ export default function ProjectsPage() {
                     ))}
                     {hasActiveFilters && (
                       <div className="border-t border-border/40 px-3 pt-2 pb-1">
-                        <button onClick={() => { setPhaseFilter('All Phases'); setStatusFilter('All Statuses'); setShowFilterMenu(false); }} className="text-xs text-muted-foreground hover:text-foreground">Clear filters</button>
+                        <button onClick={() => { setPhaseFilter('All Phases'); setStatusFilter('All Statuses'); setShowFilterMenu(false); }} className="text-xs text-muted-foreground hover:text-foreground">Clear Filters</button>
                       </div>
                     )}
                   </div>

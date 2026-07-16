@@ -334,7 +334,7 @@ export function ScheduleProductCard({
               {showMenu && (
                 <>
                   <div className="fixed inset-0 z-30" onClick={() => setShowMenu(false)} />
-                  <div className="absolute right-0 mt-1 w-52 bg-popover border border-border rounded-xl shadow-lg z-40 py-1">
+                  <div className="absolute right-0 mt-1 w-64 bg-popover border border-border rounded-xl shadow-lg z-40 py-1">
                     <MenuBtn icon="open_in_new" label="Open Details" onClick={() => { setShowMenu(false); onOpenPanel(); }} />
                     <MenuBtn icon="content_copy" label="Duplicate" onClick={() => { setShowMenu(false); onDuplicate(); }} />
                     <MenuBtn icon="add" label="Add Product Below" onClick={() => { setShowMenu(false); onAddBelow(); }} />

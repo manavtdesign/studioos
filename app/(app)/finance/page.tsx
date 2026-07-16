@@ -187,7 +187,7 @@ export default function FinancePage() {
               <span className="material-icons-outlined" style={{ fontSize: 14 }}>expand_more</span>
             </button>
             {showMonthMenu && (
-              <div className="absolute right-0 mt-1 w-52 bg-popover border border-border rounded-xl shadow-lg z-20 py-1">
+              <div className="absolute right-0 mt-1 w-64 bg-popover border border-border rounded-xl shadow-lg z-20 py-1">
                 {monthOptions.map((opt) => (
                   <button
                     key={opt.value}

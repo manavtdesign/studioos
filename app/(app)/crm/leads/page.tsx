@@ -85,12 +85,12 @@ export default function LeadsPage() {
             <button onClick={() => { setShowFilterMenu(!showFilterMenu); setShowSortMenu(false); }} title="Filter"
               className={`relative toolbar-icon-btn ${hasFilters ? 'toolbar-icon-btn-active' : ''}`}>
               <span className="material-icons-outlined" style={{ fontSize: 18 }}>filter_list</span>
-              {hasFilters && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-foreground" />}
+              {hasFilters && <span className="filter-dot-above" />}
             </button>
             {showFilterMenu && (
               <>
                 <div className="fixed inset-0 z-20" onClick={() => setShowFilterMenu(false)} />
-                <div className="absolute right-0 mt-1 w-52 bg-popover border border-border rounded-xl shadow-lg z-30 py-2 overflow-hidden">
+                <div className="absolute right-0 mt-1 w-64 bg-popover border border-border rounded-xl shadow-lg z-30 py-2 overflow-hidden">
                   <p className="px-3 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">Project Type</p>
                   {['All', ...PROJECT_TYPES].map(opt => (
                     <button key={opt} onClick={() => setTypeFilter(opt)}
@@ -106,7 +106,7 @@ export default function LeadsPage() {
                       {opt}{sourceFilter === opt && <span className="material-icons-outlined" style={{ fontSize: 13 }}>check</span>}
                     </button>
                   ))}
-                  {hasFilters && <div className="border-t border-border/40 px-3 pt-2 pb-1"><button onClick={() => { setTypeFilter('All'); setSourceFilter('All'); }} className="text-xs text-muted-foreground hover:text-foreground">Clear</button></div>}
+                  {hasFilters && <div className="border-t border-border/40 px-3 pt-2 pb-1"><button onClick={() => { setTypeFilter('All'); setSourceFilter('All'); }} className="text-xs text-muted-foreground hover:text-foreground">Clear Filters</button></div>}
                 </div>
               </>
             )}

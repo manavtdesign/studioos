@@ -7,19 +7,10 @@ import { Client } from '@/lib/crm-data';
 import { useCrm } from '@/lib/crm-context';
 import { useProjects } from '@/lib/projects-context';
 import { useSettings } from '@/lib/settings-context';
+import { useActivity } from '@/lib/activity-context';
 import { NewProjectModal, NewProjectData } from '@/components/projects/NewProjectModal';
 import { SidePanel } from '@/components/ui/SidePanel';
 import { ProjectStatusBadge } from '@/components/projects/ProjectStatusBadge';
-
-interface ActivityItem {
-  id: string;
-  date: string;
-  dateObj: Date;
-  title: string;
-  description: string;
-  icon: string;
-  projectName?: string;
-}
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -36,14 +27,29 @@ function parseDate(dateStr: string): Date {
   return new Date(dateStr + ' 2024');
 }
 
+function timeAgo(ts: number): string {
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
 export default function DashboardPage() {
   const { projects, addProject } = useProjects();
   const { clients, addClient } = useCrm();
   const { settings } = useSettings();
+  const { activities, addActivity } = useActivity();
   const [showNewProject, setShowNewProject] = useState(false);
   const [showAddClient, setShowAddClient] = useState(false);
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [showAddSupplier, setShowAddSupplier] = useState(false);
   const [showAllActivity, setShowAllActivity] = useState(false);
   const [newClient, setNewClient] = useState({ name: '', company: '', email: '', phone: '' });
+  const [newProduct, setNewProduct] = useState({ name: '', category: 'Furniture', vendor: '', price: '' });
+  const [newSupplier, setNewSupplier] = useState({ name: '', category: 'Furniture', contact: '', email: '', phone: '' });
 
   // Recent projects (continue where you left off) — sorted by updatedAt desc
   const recentProjects = useMemo(() =>
@@ -56,45 +62,20 @@ export default function DashboardPage() {
     [projects, clients]
   );
 
-  // Build activity feed from project timelines
-  const allActivity = useMemo((): ActivityItem[] => {
-    const items: ActivityItem[] = [];
-    projects.forEach(p => {
-      p.timeline.forEach(t => {
-        items.push({
-          id: `${p.id}-${t.id}`,
-          date: t.date,
-          dateObj: parseDate(t.date),
-          title: t.title,
-          description: t.description ?? '',
-          icon: getActivityIcon(t.type),
-          projectName: p.name,
-        });
-      });
-    });
-    // Also add client notes as activity
-    clients.forEach(c => {
-      c.notes.forEach(n => {
-        items.push({
-          id: `${c.id}-${n.id}`,
-          date: n.createdAt,
-          dateObj: parseDate(n.createdAt),
-          title: 'Note Added',
-          description: n.content,
-          icon: 'sticky_note_2',
-          projectName: c.company,
-        });
-      });
-    });
-    return items.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
-  }, [projects, clients]);
-
+  // Recent activity — last 5 days from ActivityContext
   const now = new Date();
   const fiveDaysAgo = new Date(now); fiveDaysAgo.setDate(now.getDate() - 5);
-  const thirtyDaysAgo = new Date(now); thirtyDaysAgo.setDate(now.getDate() - 30);
+  const fiveDaysAgoTs = fiveDaysAgo.getTime();
 
-  const recentActivity = allActivity.filter(a => a.dateObj >= fiveDaysAgo).slice(0, 8);
-  const last30DaysActivity = allActivity.filter(a => a.dateObj >= thirtyDaysAgo);
+  const recentActivity = useMemo(() =>
+    activities.filter(a => a.timestamp >= fiveDaysAgoTs),
+    [activities, fiveDaysAgoTs]
+  );
+
+  const last30DaysActivity = useMemo(() => {
+    const thirtyDaysAgo = new Date(now); thirtyDaysAgo.setDate(now.getDate() - 30);
+    return activities.filter(a => a.timestamp >= thirtyDaysAgo.getTime());
+  }, [activities, now]);
 
   const handleNewProject = (data: NewProjectData) => {
     const newProject: Project = {
@@ -125,6 +106,12 @@ export default function DashboardPage() {
       tasks: [],
     };
     addProject(newProject);
+    addActivity({
+      title: 'Project Created',
+      description: `New project "${data.name}" created`,
+      icon: 'create_new_folder',
+      source: data.name,
+    });
     setShowNewProject(false);
   };
 
@@ -150,18 +137,51 @@ export default function DashboardPage() {
       clientSince: new Date().toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }),
     };
     addClient(created);
+    addActivity({
+      title: 'Client Added',
+      description: `${newClient.name} added as a new client`,
+      icon: 'person_add',
+      source: 'Contacts',
+    });
     setNewClient({ name: '', company: '', email: '', phone: '' });
     setShowAddClient(false);
   };
 
+  const handleAddProduct = () => {
+    if (!newProduct.name) return;
+    addActivity({
+      title: 'Product Added',
+      description: `"${newProduct.name}" added to the product library`,
+      icon: 'bookmark_add',
+      source: 'Products Library',
+    });
+    setNewProduct({ name: '', category: 'Furniture', vendor: '', price: '' });
+    setShowAddProduct(false);
+  };
+
+  const handleAddSupplier = () => {
+    if (!newSupplier.name) return;
+    addActivity({
+      title: 'Supplier Added',
+      description: `"${newSupplier.name}" added as a new supplier`,
+      icon: 'local_shipping',
+      source: 'Contacts',
+    });
+    setNewSupplier({ name: '', category: 'Furniture', contact: '', email: '', phone: '' });
+    setShowAddSupplier(false);
+  };
+
   const quickActions = [
     { icon: 'create_new_folder', heading: 'Create Project', description: 'Start a new project from scratch.', onClick: () => setShowNewProject(true) },
+    { icon: 'bookmark_add', heading: 'Add Product', description: 'Add a new product to the library.', onClick: () => setShowAddProduct(true) },
     { icon: 'person_add', heading: 'Add Client', description: 'Add a new client.', onClick: () => setShowAddClient(true) },
+    { icon: 'local_shipping', heading: 'Add Supplier', description: 'Add a new supplier to contacts', onClick: () => setShowAddSupplier(true) },
   ];
 
   return (
     <>
       {showNewProject && <NewProjectModal onClose={() => setShowNewProject(false)} onSave={handleNewProject} />}
+
       {showAddClient && (
         <SidePanel title="Add Client" onClose={() => setShowAddClient(false)} footer={
           <><div /><div className="flex gap-2">
@@ -189,6 +209,71 @@ export default function DashboardPage() {
           </div>
         </SidePanel>
       )}
+
+      {showAddProduct && (
+        <SidePanel title="Add Product" onClose={() => setShowAddProduct(false)} footer={
+          <><div /><div className="flex gap-2">
+            <button onClick={() => setShowAddProduct(false)} className="notion-button border border-border">Cancel</button>
+            <button onClick={handleAddProduct} className="btn-primary">Add Product</button>
+          </div></>
+        }>
+          <div className="px-6 py-5 space-y-4">
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1.5">Product Name *</label>
+              <input value={newProduct.name} onChange={e => setNewProduct(p => ({ ...p, name: e.target.value }))} placeholder="Velvet Lounge Chair" className="modal-input" />
+            </div>
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1.5">Category</label>
+              <select value={newProduct.category} onChange={e => setNewProduct(p => ({ ...p, category: e.target.value }))} className="modal-input">
+                {['Furniture', 'Lighting', 'Finishes', 'Textiles', 'Decor', 'Hardware', 'Appliances'].map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1.5">Vendor</label>
+              <input value={newProduct.vendor} onChange={e => setNewProduct(p => ({ ...p, vendor: e.target.value }))} placeholder="Artisan Furniture Co." className="modal-input" />
+            </div>
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1.5">Price (A$)</label>
+              <input type="number" value={newProduct.price} onChange={e => setNewProduct(p => ({ ...p, price: e.target.value }))} placeholder="1850" className="modal-input" />
+            </div>
+          </div>
+        </SidePanel>
+      )}
+
+      {showAddSupplier && (
+        <SidePanel title="Add Supplier" onClose={() => setShowAddSupplier(false)} footer={
+          <><div /><div className="flex gap-2">
+            <button onClick={() => setShowAddSupplier(false)} className="notion-button border border-border">Cancel</button>
+            <button onClick={handleAddSupplier} className="btn-primary">Add Supplier</button>
+          </div></>
+        }>
+          <div className="px-6 py-5 space-y-4">
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1.5">Company Name *</label>
+              <input value={newSupplier.name} onChange={e => setNewSupplier(p => ({ ...p, name: e.target.value }))} placeholder="Luxury Lighting Co." className="modal-input" />
+            </div>
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1.5">Category</label>
+              <select value={newSupplier.category} onChange={e => setNewSupplier(p => ({ ...p, category: e.target.value }))} className="modal-input">
+                {['Furniture', 'Lighting', 'Finishes', 'Textiles', 'Plumbing', 'Appliances', 'Decor', 'Artwork', 'Materials', 'Hardware'].map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1.5">Contact Person</label>
+              <input value={newSupplier.contact} onChange={e => setNewSupplier(p => ({ ...p, contact: e.target.value }))} placeholder="Sarah Johnson" className="modal-input" />
+            </div>
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1.5">Email</label>
+              <input type="email" value={newSupplier.email} onChange={e => setNewSupplier(p => ({ ...p, email: e.target.value }))} placeholder="sarah@luxurylighting.com" className="modal-input" />
+            </div>
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1.5">Phone</label>
+              <input value={newSupplier.phone} onChange={e => setNewSupplier(p => ({ ...p, phone: e.target.value }))} placeholder="+61 2 1000 1000" className="modal-input" />
+            </div>
+          </div>
+        </SidePanel>
+      )}
+
       {showAllActivity && (
         <SidePanel title="Recent Activity" subtitle="Last 30 days" onClose={() => setShowAllActivity(false)}>
           <div className="px-6 py-5">
@@ -204,7 +289,7 @@ export default function DashboardPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium leading-tight">{item.title}</p>
                       <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.description}</p>
-                      <p className="text-xs text-muted-foreground/60 mt-1">{item.projectName} · {item.date}</p>
+                      <p className="text-xs text-muted-foreground/60 mt-1">{item.source} · {timeAgo(item.timestamp)}</p>
                     </div>
                   </div>
                 ))}
@@ -220,10 +305,10 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-semibold">{getGreeting()}, {settings.firstName}</h1>
         </div>
 
-        {/* Quick Actions */}
+        {/* Quick Actions — 2x2 grid */}
         <section>
           <h2 className="font-semibold mb-3">Quick Actions</h2>
-          <div className="grid grid-cols-1 gap-3 max-w-md">
+          <div className="grid grid-cols-2 gap-3 max-w-lg">
             {quickActions.map((action, i) => (
               <button key={i} onClick={action.onClick}
                 className="card-base card-hover p-4 flex items-start gap-3 text-left w-full">
@@ -290,10 +375,13 @@ export default function DashboardPage() {
           )}
         </section>
 
-        {/* Recent Activity */}
+        {/* Recent Activity — Last 5 days */}
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold">Recent Activity</h2>
+            <div className="flex items-baseline gap-2">
+              <h2 className="font-semibold">Recent Activity</h2>
+              <span className="text-xs text-muted-foreground">Last 5 days</span>
+            </div>
             <button onClick={() => setShowAllActivity(true)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
               View All
             </button>
@@ -302,7 +390,7 @@ export default function DashboardPage() {
             {recentActivity.length === 0 ? (
               <div className="text-center py-8">
                 <span className="material-icons-outlined text-muted-foreground/40 block mb-2" style={{ fontSize: 32 }}>history</span>
-                <p className="text-sm text-muted-foreground">No recent activity</p>
+                <p className="text-sm text-muted-foreground">No activity in the last 5 days</p>
               </div>
             ) : (
               recentActivity.map((item, i) => (
@@ -312,8 +400,8 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium leading-tight">{item.title}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed truncate">{item.description}</p>
-                    <p className="text-xs text-muted-foreground/60 mt-1">{item.projectName} · {item.date}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.description}</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">{item.source} · {timeAgo(item.timestamp)}</p>
                   </div>
                 </div>
               ))
@@ -323,17 +411,4 @@ export default function DashboardPage() {
       </div>
     </>
   );
-}
-
-function getActivityIcon(type: string): string {
-  const map: Record<string, string> = {
-    created: 'add_circle',
-    meeting: 'groups',
-    status: 'change_circle',
-    call: 'call',
-    email: 'mail',
-    invoice: 'receipt_long',
-    note: 'sticky_note_2',
-  };
-  return map[type] || 'circle';
 }

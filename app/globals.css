@@ -6,9 +6,9 @@
 
 @layer base {
   :root {
-    --background: 0 0% 93%;
+    --background: 0 0% 99%;
     --foreground: 0 0% 20%;
-    --card: 0 0% 98%;
+    --card: 0 0% 100%;
     --card-foreground: 0 0% 20%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 20%;
@@ -87,15 +87,14 @@
 @layer components {
   /* ── Sidebar ── */
   .sidebar-item {
-    @apply flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm transition-colors duration-150;
+    @apply flex items-center gap-2.5 px-2.5 rounded-lg text-sm transition-colors duration-150;
+    height: 44px;
   }
   .sidebar-item-active {
     @apply text-foreground font-medium;
   }
   .sidebar-item-hover:hover {
-    background: rgba(255,255,255,0.25);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    background: rgba(0,0,0,0.04);
     @apply text-foreground;
   }
   .nav-icon { @apply text-muted-foreground; }
@@ -231,6 +230,9 @@
   }
   .toolbar-icon-btn-active {
     @apply border-foreground/30 text-foreground bg-muted;
+  }
+  .filter-dot-above {
+    @apply absolute left-1/2 -translate-x-1/2 -top-1 w-1.5 h-1.5 rounded-full bg-foreground;
   }
 
   /* ── Glassmorphism toast notification ── */

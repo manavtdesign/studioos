@@ -310,7 +310,7 @@ export function ProductRow({
               {showMenu && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
-                  <div className="absolute right-0 mt-1 w-52 bg-popover border border-border rounded-xl shadow-lg z-20 py-1">
+                  <div className="absolute right-0 mt-1 w-64 bg-popover border border-border rounded-xl shadow-lg z-20 py-1">
                     <MenuItem icon="flag" label="Add Flag" onClick={() => { setShowMenu(false); setShowFlagMenu(true); }} />
                     <MenuItem icon="archive" label="Archive" onClick={() => { setShowMenu(false); onArchive(); }} />
                     <MenuItem icon="content_copy" label="Duplicate" onClick={() => { setShowMenu(false); onDuplicate(); }} />

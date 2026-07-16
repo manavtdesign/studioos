@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -9,8 +9,10 @@ import { SettingsProvider } from '@/lib/settings-context';
 import { CrmProvider } from '@/lib/crm-context';
 import { ProjectsProvider } from '@/lib/projects-context';
 import { NotificationProvider } from '@/lib/notification-context';
+import { ActivityProvider } from '@/lib/activity-context';
 import { NotificationCenter } from '@/components/NotificationCenter';
 import { UserMenu } from '@/components/UserMenu';
+import { GlobalSearch } from '@/components/GlobalSearch';
 
 const NAV_ITEMS = [
   { href: '/dashboard', icon: 'home', label: 'Home' },
@@ -22,6 +24,7 @@ const NAV_ITEMS = [
 
 function AppLayoutInner({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const [showSearch, setShowSearch] = useState(false);
 
   function isActive(href: string) {
     if (href === '/dashboard') return pathname === '/dashboard';
@@ -40,15 +43,26 @@ function AppLayoutInner({ children }: { children: ReactNode }) {
           </Link>
         </div>
 
+        {/* Search Button */}
+        <div className="px-2 pt-1 pb-2 flex-shrink-0">
+          <button
+            onClick={() => setShowSearch(true)}
+            className="sidebar-item sidebar-item-hover w-full"
+          >
+            <span className="material-icons-outlined nav-icon" style={{ fontSize: 18 }}>search</span>
+            <span className="nav-label" style={{ fontSize: 15 }}>Search</span>
+          </button>
+        </div>
+
         {/* Nav */}
-        <nav className="flex-1 px-2 py-1 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 px-2 space-y-0.5 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
             const active = isActive(item.href);
             return (
               <Link key={item.href} href={item.href}
                 className={`sidebar-item ${active ? 'sidebar-item-active' : 'sidebar-item-hover'}`}>
-                <span className={`${active ? 'material-icons' : 'material-icons-outlined'} nav-icon`} style={{ fontSize: 17 }}>{item.icon}</span>
-                <span className="nav-label text-[13px]">{item.label}</span>
+                <span className="material-icons-outlined nav-icon" style={{ fontSize: 18 }}>{item.icon}</span>
+                <span className="nav-label" style={{ fontSize: 15 }}>{item.label}</span>
               </Link>
             );
           })}
@@ -70,6 +84,9 @@ function AppLayoutInner({ children }: { children: ReactNode }) {
           </div>
         </div>
       </main>
+
+      {/* Global Search Side Panel */}
+      {showSearch && <GlobalSearch onClose={() => setShowSearch(false)} />}
     </div>
   );
 }
@@ -81,7 +98,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <CrmProvider>
           <ProjectsProvider>
             <NotificationProvider>
-              <AppLayoutInner>{children}</AppLayoutInner>
+              <ActivityProvider>
+                <AppLayoutInner>{children}</AppLayoutInner>
+              </ActivityProvider>
             </NotificationProvider>
           </ProjectsProvider>
         </CrmProvider>

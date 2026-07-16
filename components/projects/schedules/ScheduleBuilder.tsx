@@ -350,12 +350,12 @@ export function ScheduleBuilder({ schedule, onChange }: ScheduleBuilderProps) {
             className={`relative toolbar-icon-btn ${sectionFilter !== 'all' ? 'toolbar-icon-btn-active' : ''}`}
           >
             <span className="material-icons-outlined" style={{ fontSize: 18 }}>filter_list</span>
-            {sectionFilter !== 'all' && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-foreground" />}
+            {sectionFilter !== 'all' && <span className="filter-dot-above" />}
           </button>
           {showSectionMenu && (
             <>
               <div className="fixed inset-0 z-20" onClick={() => setShowSectionMenu(false)} />
-              <div className="absolute right-0 mt-1 w-52 bg-popover border border-border rounded-xl shadow-lg z-30 py-2 overflow-hidden">
+              <div className="absolute right-0 mt-1 w-64 bg-popover border border-border rounded-xl shadow-lg z-30 py-2 overflow-hidden">
                 <p className="px-3 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">View Section</p>
                 <button
                   onClick={() => { setSectionFilter('all'); setShowSectionMenu(false); }}
@@ -391,7 +391,7 @@ export function ScheduleBuilder({ schedule, onChange }: ScheduleBuilderProps) {
           {showSortMenu && (
             <>
               <div className="fixed inset-0 z-20" onClick={() => setShowSortMenu(false)} />
-              <div className="absolute right-0 mt-1 w-52 bg-popover border border-border rounded-xl shadow-lg z-30 py-2 overflow-hidden">
+              <div className="absolute right-0 mt-1 w-64 bg-popover border border-border rounded-xl shadow-lg z-30 py-2 overflow-hidden">
                 <p className="px-3 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">Sort By</p>
                 {SORT_OPTIONS.map(opt => (
                   <button
@@ -436,7 +436,7 @@ export function ScheduleBuilder({ schedule, onChange }: ScheduleBuilderProps) {
             {showBulkMenu && (
               <>
                 <div className="fixed inset-0 z-20" onClick={() => setShowBulkMenu(false)} />
-                <div className="absolute right-0 mt-1 w-52 bg-popover border border-border rounded-xl shadow-lg z-30 py-1">
+                <div className="absolute right-0 mt-1 w-64 bg-popover border border-border rounded-xl shadow-lg z-30 py-1">
                   <p className="px-3 py-1.5 text-xs font-medium text-muted-foreground">Bulk Actions</p>
                   <button onClick={() => { selectedProducts.forEach(id => { const p = allFilteredProducts.find(p => p.id === id); if (p) handleUpdateProduct(id, { ...p, status: 'Approved' }); }); setShowBulkMenu(false); }} className="w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">Change Status</button>
                   <button className="w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">Copy to Project</button>

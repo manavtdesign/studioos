@@ -63,12 +63,12 @@ export default function VendorLibraryPage() {
             className={`relative toolbar-icon-btn ${categoryFilter !== 'All Vendors' ? 'toolbar-icon-btn-active' : ''}`}
           >
             <span className="material-icons-outlined" style={{ fontSize: 18 }}>filter_list</span>
-            {categoryFilter !== 'All Vendors' && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-foreground" />}
+            {categoryFilter !== 'All Vendors' && <span className="filter-dot-above" />}
           </button>
           {showFilterMenu && (
             <>
               <div className="fixed inset-0 z-20" onClick={() => setShowFilterMenu(false)} />
-              <div className="absolute right-0 mt-1 w-48 bg-popover border border-border rounded-xl shadow-lg z-30 py-1 overflow-hidden">
+              <div className="absolute right-0 mt-1 w-64 bg-popover border border-border rounded-xl shadow-lg z-30 py-1 overflow-hidden">
                 <div className="max-h-64 overflow-y-auto dropdown-scroll">
                   {categories.map((cat) => (
                     <button
@@ -85,6 +85,11 @@ export default function VendorLibraryPage() {
                     </button>
                   ))}
                 </div>
+                {categoryFilter !== 'All Vendors' && (
+                  <div className="border-t border-border/40 px-3 pt-2 pb-1">
+                    <button onClick={() => { setCategoryFilter('All Vendors'); setShowFilterMenu(false); }} className="text-xs text-muted-foreground hover:text-foreground">Clear Filters</button>
+                  </div>
+                )}
               </div>
             </>
           )}

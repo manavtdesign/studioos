@@ -1,9 +1,21 @@
 'use client';
 
+import { useState } from 'react';
 import { useNotifications } from '@/lib/notification-context';
+
+type Tab = 'all' | 'unread' | 'read';
 
 export default function NotificationsPage() {
   const { notifications, unreadCount, markAsRead, markAsUnread, markAllAsRead, clearAll } = useNotifications();
+  const [activeTab, setActiveTab] = useState<Tab>('all');
+
+  const filtered = notifications.filter(n => {
+    if (activeTab === 'unread') return !n.read;
+    if (activeTab === 'read') return n.read;
+    return true;
+  });
+
+  const readCount = notifications.length - unreadCount;
 
   return (
     <div className="space-y-5">
@@ -28,16 +40,40 @@ export default function NotificationsPage() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="flex items-center gap-1 border-b border-border">
+        {([
+          { id: 'all' as const, label: 'All', count: notifications.length },
+          { id: 'unread' as const, label: 'Unread', count: unreadCount },
+          { id: 'read' as const, label: 'Read', count: readCount },
+        ]).map(tab => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              activeTab === tab.id ? 'border-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}>
+            {tab.label}
+            <span className={`text-xs px-1.5 py-0.5 rounded-full ${activeTab === tab.id ? 'bg-foreground/10 text-foreground' : 'bg-muted text-muted-foreground'}`}>
+              {tab.count}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* List */}
       <div className="card-base overflow-hidden">
-        {notifications.length === 0 ? (
+        {filtered.length === 0 ? (
           <div className="text-center py-16">
-            <span className="material-icons-outlined text-muted-foreground/40 block mb-3" style={{ fontSize: 40 }}>notifications_none</span>
-            <p className="text-sm text-muted-foreground">No notifications</p>
+            <span className="material-icons-outlined text-muted-foreground/40 block mb-3" style={{ fontSize: 40 }}>
+              {activeTab === 'unread' ? 'mark_email_read' : activeTab === 'read' ? 'mark_email_unread' : 'notifications_none'}
+            </span>
+            <p className="text-sm text-muted-foreground">
+              {activeTab === 'unread' ? 'No unread notifications' : activeTab === 'read' ? 'No read notifications' : 'No notifications'}
+            </p>
           </div>
         ) : (
-          notifications.map((n, i) => (
+          filtered.map((n, i) => (
             <div key={n.id}
-              className={`flex items-start gap-3 px-5 py-4 hover:bg-muted/30 transition-colors ${i < notifications.length - 1 ? 'border-b border-border/40' : ''} ${!n.read ? 'bg-muted/10' : ''}`}>
+              className={`flex items-start gap-3 px-5 py-4 hover:bg-muted/30 transition-colors ${i < filtered.length - 1 ? 'border-b border-border/40' : ''} ${!n.read ? 'bg-muted/10' : ''}`}>
               {/* Icon */}
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${!n.read ? 'bg-foreground/10' : 'bg-muted'}`}>
                 <span className={`material-icons-outlined ${!n.read ? 'text-foreground' : 'text-muted-foreground'}`} style={{ fontSize: 16 }}>notifications</span>

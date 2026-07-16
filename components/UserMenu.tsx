@@ -44,7 +44,7 @@ export function UserMenu() {
         </button>
 
         {open && (
-          <div className="absolute right-0 top-full mt-2 w-52 bg-popover border border-border rounded-xl shadow-xl z-50 overflow-hidden">
+          <div className="absolute right-0 top-full mt-2 w-64 bg-popover border border-border rounded-xl shadow-xl z-50 overflow-hidden">
             {/* User info */}
             <div className="px-4 py-3 border-b border-border">
               <p className="text-sm font-medium truncate">{fullName}</p>

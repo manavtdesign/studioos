@@ -28,6 +28,7 @@ export function FilterDropdown({ label, value, options, onChange, icon = 'filter
 
   return (
     <div className="relative" ref={ref}>
+      {hasValue && <span className="filter-dot-above" />}
       <button
         onClick={() => setOpen(!open)}
         className={`notion-button border gap-1.5 text-sm transition-colors ${
@@ -35,17 +36,17 @@ export function FilterDropdown({ label, value, options, onChange, icon = 'filter
         }`}
       >
         <span className="material-icons-outlined" style={{ fontSize: 15 }}>{icon}</span>
-        <span className="max-w-[120px] truncate">{hasValue ? value : label}</span>
+        <span className="max-w-[140px] truncate">{hasValue ? value : label}</span>
         <span className="material-icons-outlined" style={{ fontSize: 14 }}>expand_more</span>
       </button>
 
       {open && (
-        <div className="absolute left-0 mt-1 w-52 bg-popover border border-border rounded-xl shadow-lg z-30 py-1">
+        <div className="absolute left-0 mt-1 w-64 bg-popover border border-border rounded-xl shadow-lg z-30 py-1">
           {options.map((opt) => (
             <button
               key={opt}
               onClick={() => { onChange(opt); setOpen(false); }}
-              className={`flex items-center justify-between w-full px-4 py-2 text-sm text-left hover:bg-muted transition-colors ${
+              className={`flex items-center justify-between w-full px-4 py-2 text-sm text-left hover:bg-muted transition-colors whitespace-nowrap ${
                 value === opt ? 'text-foreground font-medium' : 'text-muted-foreground'
               }`}
             >
@@ -55,6 +56,16 @@ export function FilterDropdown({ label, value, options, onChange, icon = 'filter
               )}
             </button>
           ))}
+          {hasValue && (
+            <div className="border-t border-border/40 px-4 pt-2 pb-1">
+              <button
+                onClick={() => { onChange(options[0]); setOpen(false); }}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Clear Filters
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

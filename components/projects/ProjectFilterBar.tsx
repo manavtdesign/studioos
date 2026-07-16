@@ -68,7 +68,7 @@ export function ProjectFilterBar({
         <FilterDropdown label="Pinned" value={pinnedFilter} options={['All', 'Pinned', 'Unpinned']} onChange={onPinnedChange} />
         {hasActiveFilters && (
           <button onClick={onClearFilters} className="text-xs text-muted-foreground hover:text-foreground underline">
-            Clear filters
+            Clear Filters
           </button>
         )}
       </div>
