@@ -182,7 +182,6 @@ export default function ProjectsPage() {
                 className={`relative toolbar-icon-btn ${hasTypeFilter ? 'toolbar-icon-btn-active' : ''}`}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }}>event_list</span>
-                {hasTypeFilter && <span className="filter-dot-above" />}
               </button>
               {showTypeMenu && (
                 <>
@@ -213,7 +212,6 @@ export default function ProjectsPage() {
                 className={`relative toolbar-icon-btn ${hasActiveFilters ? 'toolbar-icon-btn-active' : ''}`}
               >
                 <span className="material-icons-outlined" style={{ fontSize: 18 }}>filter_list</span>
-                {hasActiveFilters && <span className="filter-dot-above" />}
               </button>
               {showFilterMenu && (
                 <>

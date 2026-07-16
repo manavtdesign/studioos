@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Project, PROJECT_PHASES, ProjectPhase, formatBudget } from '@/lib/projects-data';
 import { useProjects } from '@/lib/projects-context';
 import { useCrm } from '@/lib/crm-context';
+import { useActivity } from '@/lib/activity-context';
 import { SchedulesTab } from '@/components/projects/schedules';
 import { DeleteProjectDialog } from '@/components/projects/DeleteProjectDialog';
 import { PinButton } from '@/components/crm/PinButton';
@@ -25,6 +26,7 @@ export default function ProjectWorkspacePage() {
   const id = params.id as string;
 
   const { projects, togglePin, setPhaseProgress, changePhase, updateProject, archiveProject, unarchiveProject, deleteProject } = useProjects();
+  const { addActivity } = useActivity();
   const { clients } = useCrm();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('Overview');
@@ -55,18 +57,24 @@ export default function ProjectWorkspacePage() {
     changePhase(id, phase);
     setPhaseConfirmMsg(`${prevPhase} completed successfully.`);
     setTimeout(() => setPhaseConfirmMsg(''), 3500);
+    addActivity({ title: 'Phase Changed', description: `${project.name} moved from ${prevPhase} to ${phase}`, icon: 'change_circle', source: project.name });
   };
 
-  const handleEditSave = (data: Partial<Project>) => updateProject(id, data);
+  const handleEditSave = (data: Partial<Project>) => {
+    updateProject(id, data);
+    addActivity({ title: 'Project Updated', description: `Details updated for ${project.name}`, icon: 'edit', source: project.name });
+  };
 
   const handleArchive = () => {
     archiveProject(id);
     setShowArchiveDialog(false);
+    addActivity({ title: 'Project Archived', description: `${project.name} has been archived`, icon: 'archive', source: project.name });
   };
 
   const handleDelete = () => {
     deleteProject(id);
     setShowDeleteDialog(false);
+    addActivity({ title: 'Project Deleted', description: `${project.name} has been deleted`, icon: 'delete', source: 'Projects' });
     router.push('/projects');
   };
 

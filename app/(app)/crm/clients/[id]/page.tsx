@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatBudget } from '@/lib/crm-data';
 import { useCrm } from '@/lib/crm-context';
+import { useActivity } from '@/lib/activity-context';
 import { ClientStatusBadge } from '@/components/crm/StatusBadge';
 import { Timeline } from '@/components/crm/Timeline';
 import { NotesPanel } from '@/components/crm/NotesPanel';
@@ -25,6 +26,7 @@ interface Props {
 export default function ClientDetailPage({ params }: Props) {
   const { id } = params;
   const { clients, deleteClient } = useCrm();
+  const { addActivity } = useActivity();
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const client = clients.find((c) => c.id === id);
@@ -194,7 +196,12 @@ export default function ClientDetailPage({ params }: Props) {
       {showDeleteDialog && (
         <DeleteClientDialog
           clientName={client.primaryContact}
-          onConfirm={() => { deleteClient(id); setShowDeleteDialog(false); router.push('/crm/clients'); }}
+          onConfirm={() => {
+            deleteClient(id);
+            setShowDeleteDialog(false);
+            addActivity({ title: 'Client Deleted', description: `${client.primaryContact} has been removed`, icon: 'delete', source: 'Contacts' });
+            router.push('/crm/clients');
+          }}
           onCancel={() => setShowDeleteDialog(false)}
         />
       )}

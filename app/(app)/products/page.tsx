@@ -152,7 +152,6 @@ export default function ProductsPage() {
             <button onClick={() => setShowFilterMenu(!showFilterMenu)} title="Filter by category"
               className={`relative toolbar-icon-btn ${categoryFilter !== 'All Categories' ? 'toolbar-icon-btn-active' : ''}`}>
               <span className="material-icons-outlined" style={{ fontSize: 18 }}>filter_list</span>
-              {categoryFilter !== 'All Categories' && <span className="filter-dot-above" />}
             </button>
             {showFilterMenu && (
               <>

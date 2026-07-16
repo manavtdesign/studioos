@@ -121,8 +121,8 @@ export default function ContactsPage() {
 
   const currentCount = typeFilter === 'leads' ? filteredLeads.length : typeFilter === 'clients' ? filteredClients.length : filteredSuppliers.length;
   const addButton = typeFilter === 'suppliers'
-    ? { label: '+ Add Supplier', onClick: () => setShowAddSupplier(true), icon: 'local_shipping' }
-    : { label: '+ Add Client', onClick: () => setShowAddClient(true), icon: 'person_add' };
+    ? { label: 'Add Supplier', onClick: () => setShowAddSupplier(true), icon: 'local_shipping' }
+    : { label: 'Add Client', onClick: () => setShowAddClient(true), icon: 'person_add' };
 
   return (
     <>
@@ -197,15 +197,15 @@ export default function ContactsPage() {
         {/* Toolbar */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Type filter tabs */}
-          <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
+          <div className="flex border border-border rounded-lg overflow-hidden">
             {([
               { id: 'clients' as const, label: 'Clients' },
               { id: 'leads' as const, label: 'Leads' },
               { id: 'suppliers' as const, label: 'Suppliers' },
             ]).map(tab => (
               <button key={tab.id} onClick={() => setTypeFilter(tab.id)}
-                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-                  typeFilter === tab.id ? 'bg-card text-foreground font-medium shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                className={`px-3 py-1.5 text-sm font-medium transition-colors border-l border-border first:border-l-0 ${
+                  typeFilter === tab.id ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}>
                 {tab.label}
               </button>

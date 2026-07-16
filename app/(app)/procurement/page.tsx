@@ -63,7 +63,6 @@ export default function VendorLibraryPage() {
             className={`relative toolbar-icon-btn ${categoryFilter !== 'All Vendors' ? 'toolbar-icon-btn-active' : ''}`}
           >
             <span className="material-icons-outlined" style={{ fontSize: 18 }}>filter_list</span>
-            {categoryFilter !== 'All Vendors' && <span className="filter-dot-above" />}
           </button>
           {showFilterMenu && (
             <>

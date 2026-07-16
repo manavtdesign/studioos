@@ -350,7 +350,6 @@ export function ScheduleBuilder({ schedule, onChange }: ScheduleBuilderProps) {
             className={`relative toolbar-icon-btn ${sectionFilter !== 'all' ? 'toolbar-icon-btn-active' : ''}`}
           >
             <span className="material-icons-outlined" style={{ fontSize: 18 }}>filter_list</span>
-            {sectionFilter !== 'all' && <span className="filter-dot-above" />}
           </button>
           {showSectionMenu && (
             <>

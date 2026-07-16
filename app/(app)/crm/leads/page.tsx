@@ -85,7 +85,6 @@ export default function LeadsPage() {
             <button onClick={() => { setShowFilterMenu(!showFilterMenu); setShowSortMenu(false); }} title="Filter"
               className={`relative toolbar-icon-btn ${hasFilters ? 'toolbar-icon-btn-active' : ''}`}>
               <span className="material-icons-outlined" style={{ fontSize: 18 }}>filter_list</span>
-              {hasFilters && <span className="filter-dot-above" />}
             </button>
             {showFilterMenu && (
               <>

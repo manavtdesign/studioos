@@ -175,7 +175,7 @@ export default function DashboardPage() {
     { icon: 'create_new_folder', heading: 'Create Project', description: 'Start a new project from scratch.', onClick: () => setShowNewProject(true) },
     { icon: 'bookmark_add', heading: 'Add Product', description: 'Add a new product to the library.', onClick: () => setShowAddProduct(true) },
     { icon: 'person_add', heading: 'Add Client', description: 'Add a new client.', onClick: () => setShowAddClient(true) },
-    { icon: 'box_add', heading: 'Add Supplier', description: 'Add a new supplier.', onClick: () => setShowAddSupplier(true) },
+    { icon: 'add_box', heading: 'Add Supplier', description: 'Add a new supplier.', onClick: () => setShowAddSupplier(true) },
   ];
 
   return (

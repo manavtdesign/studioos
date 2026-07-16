@@ -28,7 +28,6 @@ export function FilterDropdown({ label, value, options, onChange, icon = 'filter
 
   return (
     <div className="relative" ref={ref}>
-      {hasValue && <span className="filter-dot-above" />}
       <button
         onClick={() => setOpen(!open)}
         className={`notion-button border gap-1.5 text-sm transition-colors ${

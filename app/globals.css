@@ -231,10 +231,6 @@
   .toolbar-icon-btn-active {
     @apply border-foreground/30 text-foreground bg-muted;
   }
-  .filter-dot-above {
-    @apply absolute left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-foreground;
-    top: -5px;
-  }
 
   /* ── Glassmorphism toast notification ── */
   .glass-toast {

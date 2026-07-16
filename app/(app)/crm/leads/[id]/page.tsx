@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatBudget } from '@/lib/crm-data';
 import { useCrm } from '@/lib/crm-context';
+import { useActivity } from '@/lib/activity-context';
 import { LeadStatusBadge } from '@/components/crm/StatusBadge';
 import { Timeline } from '@/components/crm/Timeline';
 import { NotesPanel } from '@/components/crm/NotesPanel';
@@ -20,12 +21,14 @@ export default function LeadDetailPage({ params }: Props) {
   const { id } = params;
   const router = useRouter();
   const { leads, deleteLead } = useCrm();
+  const { addActivity } = useActivity();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const lead = leads.find((l) => l.id === id);
 
   const handleDelete = () => {
     deleteLead(id);
     setShowDeleteDialog(false);
+    addActivity({ title: 'Lead Deleted', description: `${lead?.firstName} ${lead?.lastName} has been removed`, icon: 'delete', source: 'Contacts' });
     router.push('/crm/leads');
   };
 
