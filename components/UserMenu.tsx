@@ -2,25 +2,15 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-
 import { useSettings } from '@/lib/settings-context';
-
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((n) => n[0].toUpperCase())
-    .join('');
-}
 
 export function UserMenu() {
   const { settings } = useSettings();
   const fullName = `${settings.firstName} ${settings.lastName}`.trim();
+  const initial = settings.firstName.charAt(0).toUpperCase();
   const [open, setOpen] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const initials = getInitials(fullName);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -47,25 +37,18 @@ export function UserMenu() {
       <div className="relative" ref={ref}>
         <button
           onClick={() => setOpen(!open)}
-          className="w-8 h-8 rounded-full bg-muted hover:bg-muted/80 border border-border flex items-center justify-center transition-colors flex-shrink-0"
+          className="w-9 h-9 rounded-lg bg-muted border border-border flex items-center justify-center transition-colors hover:bg-muted/80 flex-shrink-0"
           title={fullName}
         >
-          <span className="text-xs font-semibold text-foreground select-none">{initials}</span>
+          <span className="text-sm font-semibold text-foreground select-none">{initial}</span>
         </button>
 
         {open && (
-          <div className="absolute right-0 top-full mt-2 w-56 bg-popover border border-border rounded-xl shadow-xl z-50 overflow-hidden">
+          <div className="absolute right-0 top-full mt-2 w-52 bg-popover border border-border rounded-xl shadow-xl z-50 overflow-hidden">
             {/* User info */}
             <div className="px-4 py-3 border-b border-border">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-muted border border-border flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-semibold text-foreground">{initials}</span>
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{fullName}</p>
-                  <p className="text-xs text-muted-foreground truncate">Administrator</p>
-                </div>
-              </div>
+              <p className="text-sm font-medium truncate">{fullName}</p>
+              <p className="text-xs text-muted-foreground truncate">{settings.email}</p>
             </div>
 
             {/* Menu items */}
@@ -76,14 +59,14 @@ export function UserMenu() {
                 className="flex items-center gap-2.5 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               >
                 <span className="material-icons-outlined" style={{ fontSize: 16 }}>settings</span>
-                Settings
+                Account Settings
               </Link>
               <button
                 onClick={() => { setOpen(false); setShowLogoutDialog(true); }}
                 className="flex items-center gap-2.5 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors w-full text-left"
               >
                 <span className="material-icons-outlined" style={{ fontSize: 16 }}>logout</span>
-                Log Out
+                Sign Out
               </button>
             </div>
           </div>
@@ -108,7 +91,7 @@ function LogoutDialog({ onConfirm, onCancel }: { onConfirm: () => void; onCancel
         <p className="text-sm text-muted-foreground mb-5">You will be redirected to the login screen.</p>
         <div className="flex items-center gap-2 justify-end">
           <button onClick={onCancel} className="notion-button border border-border">Cancel</button>
-          <button onClick={onConfirm} className="notion-button bg-foreground text-background hover:bg-foreground/90">Log Out</button>
+          <button onClick={onConfirm} className="notion-button bg-foreground text-background hover:bg-foreground/90">Sign Out</button>
         </div>
       </div>
     </div>

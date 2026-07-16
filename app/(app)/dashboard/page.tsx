@@ -2,59 +2,99 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { PROJECT_PHASES, Project } from '@/lib/projects-data';
-import { useCrm } from '@/lib/crm-context';
+import { Project } from '@/lib/projects-data';
 import { Client } from '@/lib/crm-data';
+import { useCrm } from '@/lib/crm-context';
 import { useProjects } from '@/lib/projects-context';
-import { NewProjectModal, NewProjectData } from '@/components/projects/NewProjectModal';
-import { NewLeadModal } from '@/components/crm/NewLeadModal';
-import { SidePanel } from '@/components/ui/SidePanel';
 import { useSettings } from '@/lib/settings-context';
+import { NewProjectModal, NewProjectData } from '@/components/projects/NewProjectModal';
+import { SidePanel } from '@/components/ui/SidePanel';
 import { ProjectStatusBadge } from '@/components/projects/ProjectStatusBadge';
 
-const STATUS_OPTIONS = ['All Statuses', 'Active', 'On Hold', 'Completed'];
+interface ActivityItem {
+  id: string;
+  date: string;
+  dateObj: Date;
+  title: string;
+  description: string;
+  icon: string;
+  projectName?: string;
+}
+
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function parseDate(dateStr: string): Date {
+  const d = new Date(dateStr);
+  if (!isNaN(d.getTime())) return d;
+  const parsed = new Date(dateStr.replace(/(\d+)(st|nd|rd|th)/, '$1'));
+  if (!isNaN(parsed.getTime())) return parsed;
+  return new Date(dateStr + ' 2024');
+}
 
 export default function DashboardPage() {
   const { projects, addProject } = useProjects();
   const { clients, addClient } = useCrm();
   const { settings } = useSettings();
   const [showNewProject, setShowNewProject] = useState(false);
-  const [showNewLead, setShowNewLead] = useState(false);
   const [showAddClient, setShowAddClient] = useState(false);
+  const [showAllActivity, setShowAllActivity] = useState(false);
   const [newClient, setNewClient] = useState({ name: '', company: '', email: '', phone: '' });
 
-  // Filter state
-  const [filterPhase, setFilterPhase] = useState('All');
-  const [filterStatus, setFilterStatus] = useState('All Statuses');
-  const [showFilterMenu, setShowFilterMenu] = useState(false);
-  const [showSortMenu, setShowSortMenu] = useState(false);
-
-  const activeProjects = useMemo(() =>
+  // Recent projects (continue where you left off) — sorted by updatedAt desc
+  const recentProjects = useMemo(() =>
     projects
-      .filter((p) => p.status !== 'Archived')
-      .filter((p) => filterPhase === 'All' || p.currentPhase === filterPhase)
-      .filter((p) => filterStatus === 'All Statuses' || p.status === filterStatus)
-      .slice(0, 6)
-      .map((p) => ({ ...p, client: clients.find((c) => c.id === p.clientId) })),
-    [projects, filterPhase, filterStatus, clients]
+      .filter(p => p.status !== 'Archived')
+      .slice()
+      .sort((a, b) => parseDate(b.updatedAt).getTime() - parseDate(a.updatedAt).getTime())
+      .slice(0, 4)
+      .map(p => ({ ...p, client: clients.find(c => c.id === p.clientId) })),
+    [projects, clients]
   );
 
-  // Revenue calculated from project budgets (live)
-  const totalRevenue = useMemo(() =>
-    projects
-      .filter(p => p.status === 'Active')
-      .reduce((sum, p) => sum + p.estimatedBudget, 0),
-    [projects]
-  );
+  // Build activity feed from project timelines
+  const allActivity = useMemo((): ActivityItem[] => {
+    const items: ActivityItem[] = [];
+    projects.forEach(p => {
+      p.timeline.forEach(t => {
+        items.push({
+          id: `${p.id}-${t.id}`,
+          date: t.date,
+          dateObj: parseDate(t.date),
+          title: t.title,
+          description: t.description ?? '',
+          icon: getActivityIcon(t.type),
+          projectName: p.name,
+        });
+      });
+    });
+    // Also add client notes as activity
+    clients.forEach(c => {
+      c.notes.forEach(n => {
+        items.push({
+          id: `${c.id}-${n.id}`,
+          date: n.createdAt,
+          dateObj: parseDate(n.createdAt),
+          title: 'Note Added',
+          description: n.content,
+          icon: 'sticky_note_2',
+          projectName: c.company,
+        });
+      });
+    });
+    return items.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
+  }, [projects, clients]);
 
-  const kpis = useMemo(() => [
-    { label: 'Active Projects', value: projects.filter(p => p.status === 'Active').length.toString(), icon: 'folder_open', change: `${projects.filter(p => p.status === 'Active').length} active` },
-    { label: 'Total Clients', value: clients.length.toString(), icon: 'people', change: 'Across all projects' },
-    { label: 'New Leads', value: '3', icon: 'person_add', change: 'This week' },
-    { label: 'Revenue (Active)', value: `A$${totalRevenue.toLocaleString('en-AU')}`, icon: 'account_balance_wallet', change: 'From active projects' },
-  ], [projects, clients, totalRevenue]);
+  const now = new Date();
+  const fiveDaysAgo = new Date(now); fiveDaysAgo.setDate(now.getDate() - 5);
+  const thirtyDaysAgo = new Date(now); thirtyDaysAgo.setDate(now.getDate() - 30);
 
-  const hasActiveFilter = filterPhase !== 'All' || filterStatus !== 'All Statuses';
+  const recentActivity = allActivity.filter(a => a.dateObj >= fiveDaysAgo).slice(0, 8);
+  const last30DaysActivity = allActivity.filter(a => a.dateObj >= thirtyDaysAgo);
 
   const handleNewProject = (data: NewProjectData) => {
     const newProject: Project = {
@@ -114,10 +154,14 @@ export default function DashboardPage() {
     setShowAddClient(false);
   };
 
+  const quickActions = [
+    { icon: 'create_new_folder', heading: 'Create Project', description: 'Start a new project from scratch.', onClick: () => setShowNewProject(true) },
+    { icon: 'person_add', heading: 'Add Client', description: 'Add a new client.', onClick: () => setShowAddClient(true) },
+  ];
+
   return (
     <>
       {showNewProject && <NewProjectModal onClose={() => setShowNewProject(false)} onSave={handleNewProject} />}
-      {showNewLead && <NewLeadModal onClose={() => setShowNewLead(false)} />}
       {showAddClient && (
         <SidePanel title="Add Client" onClose={() => setShowAddClient(false)} footer={
           <><div /><div className="flex gap-2">
@@ -145,158 +189,151 @@ export default function DashboardPage() {
           </div>
         </SidePanel>
       )}
-
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-2xl font-semibold">Dashboard</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">Welcome back, {settings.firstName}.</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setShowNewProject(true)} className="btn-primary">
-              New Project
-            </button>
-            <button onClick={() => setShowNewLead(true)} className="notion-button border border-border/60 bg-card/80">
-              Add Lead
-            </button>
-            <button onClick={() => setShowAddClient(true)} className="notion-button border border-border/60 bg-card/80">
-              Add Client
-            </button>
-          </div>
-        </div>
-
-        {/* KPI Strip */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {kpis.map((kpi) => (
-            <div key={kpi.label} className="kpi-card">
-              <div className="mb-3">
-                <span className="material-icons-outlined text-muted-foreground" style={{ fontSize: 20 }}>{kpi.icon}</span>
+      {showAllActivity && (
+        <SidePanel title="Recent Activity" subtitle="Last 30 days" onClose={() => setShowAllActivity(false)}>
+          <div className="px-6 py-5">
+            {last30DaysActivity.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No activity in the last 30 days</p>
+            ) : (
+              <div className="space-y-0">
+                {last30DaysActivity.map((item, i) => (
+                  <div key={item.id} className={`flex items-start gap-3 py-3 ${i < last30DaysActivity.length - 1 ? 'border-b border-border/40' : ''}`}>
+                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                      <span className="material-icons-outlined text-muted-foreground" style={{ fontSize: 16 }}>{item.icon}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium leading-tight">{item.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.description}</p>
+                      <p className="text-xs text-muted-foreground/60 mt-1">{item.projectName} · {item.date}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <p className="text-2xl font-bold">{kpi.value}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{kpi.label}</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">{kpi.change}</p>
-            </div>
-          ))}
+            )}
+          </div>
+        </SidePanel>
+      )}
+
+      <div className="space-y-8">
+        {/* Greeting */}
+        <div>
+          <h1 className="text-2xl font-semibold">{getGreeting()}, {settings.firstName}</h1>
         </div>
 
-        {/* Active Projects */}
+        {/* Quick Actions */}
+        <section>
+          <h2 className="font-semibold mb-3">Quick Actions</h2>
+          <div className="grid grid-cols-1 gap-3 max-w-md">
+            {quickActions.map((action, i) => (
+              <button key={i} onClick={action.onClick}
+                className="card-base card-hover p-4 flex items-start gap-3 text-left w-full">
+                {/* Icon in rounded square */}
+                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                  <span className="material-icons-outlined text-foreground" style={{ fontSize: 20 }}>{action.icon}</span>
+                </div>
+                {/* Heading + description */}
+                <div className="flex-1 min-w-0 pt-0.5">
+                  <p className="text-sm font-medium">{action.heading}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{action.description}</p>
+                </div>
+                <span className="material-icons-outlined text-muted-foreground/40 flex-shrink-0" style={{ fontSize: 18 }}>chevron_right</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* Continue Where You Left Off */}
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold">Active Projects</h2>
-            <div className="flex items-center gap-2">
-              {/* Filter icon-only — shows Current Phase */}
-              <div className="relative">
-                <button onClick={() => { setShowFilterMenu(!showFilterMenu); setShowSortMenu(false); }} title="Filter by Current Phase"
-                  className={`relative toolbar-icon-btn ${filterPhase !== 'All' ? 'toolbar-icon-btn-active' : ''}`}>
-                  <span className="material-icons-outlined" style={{ fontSize: 17 }}>filter_list</span>
-                  {filterPhase !== 'All' && <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-foreground" />}
-                </button>
-                {showFilterMenu && (
-                  <>
-                    <div className="fixed inset-0 z-20" onClick={() => setShowFilterMenu(false)} />
-                    <div className="absolute right-0 mt-1 w-52 bg-popover border border-border rounded-xl shadow-lg z-30 py-2">
-                      <p className="px-3 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Current Phase</p>
-                      {['All', ...PROJECT_PHASES].map((opt) => (
-                        <button key={opt} onClick={() => { setFilterPhase(opt); setShowFilterMenu(false); }}
-                          className={`filter-item ${filterPhase === opt ? 'filter-item-active' : 'filter-item-inactive'}`}>
-                          {opt}
-                          {filterPhase === opt && <span className="material-icons-outlined" style={{ fontSize: 13 }}>check</span>}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Sort icon-only — shows Status */}
-              <div className="relative">
-                <button onClick={() => { setShowSortMenu(!showSortMenu); setShowFilterMenu(false); }} title="Sort by Status"
-                  className={`relative toolbar-icon-btn ${filterStatus !== 'All Statuses' ? 'toolbar-icon-btn-active' : ''}`}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 17 }}>list_arrow</span>
-                  {filterStatus !== 'All Statuses' && <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-foreground" />}
-                </button>
-                {showSortMenu && (
-                  <>
-                    <div className="fixed inset-0 z-20" onClick={() => setShowSortMenu(false)} />
-                    <div className="absolute right-0 mt-1 w-48 bg-popover border border-border rounded-xl shadow-lg z-30 py-2">
-                      <p className="px-3 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Status</p>
-                      {STATUS_OPTIONS.map((opt) => (
-                        <button key={opt} onClick={() => { setFilterStatus(opt); setShowSortMenu(false); }}
-                          className={`filter-item ${filterStatus === opt ? 'filter-item-active' : 'filter-item-inactive'}`}>
-                          {opt}
-                          {filterStatus === opt && <span className="material-icons-outlined" style={{ fontSize: 13 }}>check</span>}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {hasActiveFilter && (
-                <button onClick={() => { setFilterPhase('All'); setFilterStatus('All Statuses'); }}
-                  className="text-xs text-muted-foreground hover:text-foreground">
-                  Clear
-                </button>
-              )}
-
-              <Link href="/projects" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                View all
-              </Link>
-            </div>
+            <h2 className="font-semibold">Continue Where You Left Off</h2>
+            <Link href="/projects" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              View All Projects
+            </Link>
           </div>
+          {recentProjects.length === 0 ? (
+            <div className="card-base p-8 text-center">
+              <span className="material-icons-outlined text-muted-foreground/40 block mb-2" style={{ fontSize: 32 }}>folder_open</span>
+              <p className="text-sm text-muted-foreground">No recent projects</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {recentProjects.map(project => (
+                <div key={project.id} className="project-card p-4">
+                  <Link href={`/projects/${project.id}`} className="block">
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm truncate">{project.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{project.client?.primaryContact || 'Unknown'}</p>
+                      </div>
+                      <ProjectStatusBadge status={project.status} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Phase</span>
+                        <span className="text-foreground">{project.currentPhase}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Updated</span>
+                        <span className="text-foreground">{project.updatedAt}</span>
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all" style={{ width: `${project.progress}%`, background: 'rgba(51,51,51,0.35)' }} />
+                      </div>
+                      <span className="text-xs text-muted-foreground mt-1 block">{project.progress}% complete</span>
+                    </div>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
+        {/* Recent Activity */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold">Recent Activity</h2>
+            <button onClick={() => setShowAllActivity(true)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              View All
+            </button>
+          </div>
           <div className="card-base overflow-hidden">
-            <table className="w-full table-fixed">
-              <colgroup>
-                <col className="w-1/5" />
-                <col className="w-1/5" />
-                <col className="w-1/5" />
-                <col className="w-1/5" />
-                <col className="w-1/5" />
-              </colgroup>
-              <thead>
-                <tr className="border-b border-border bg-muted/20">
-                  <th className="table-header text-left">Project</th>
-                  <th className="table-header text-left">Client</th>
-                  <th className="table-header text-left">Phase</th>
-                  <th className="table-header text-left">Status</th>
-                  <th className="table-header text-left">Progress</th>
-                </tr>
-              </thead>
-              <tbody>
-                {activeProjects.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="text-center py-8 text-sm text-muted-foreground">No projects match current filters</td>
-                  </tr>
-                ) : (
-                  activeProjects.map((project) => (
-                    <tr key={project.id}
-                      className="border-b border-border/40 last:border-b-0 hover:bg-muted/15 cursor-pointer transition-colors"
-                      onClick={() => window.location.href = `/projects/${project.id}`}>
-                      <td className="table-cell">
-                        <p className="font-medium text-sm">{project.name}</p>
-                        <p className="text-xs text-muted-foreground">{project.address}</p>
-                      </td>
-                      <td className="table-cell text-sm text-muted-foreground overflow-hidden text-ellipsis whitespace-nowrap">{project.client?.primaryContact || '—'}</td>
-                      <td className="table-cell text-sm text-muted-foreground overflow-hidden text-ellipsis whitespace-nowrap">{project.currentPhase}</td>
-                      <td className="table-cell"><ProjectStatusBadge status={project.status} /></td>
-                      <td className="table-cell">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full rounded-full transition-all" style={{ width: `${project.progress}%`, background: 'rgba(51,51,51,0.35)' }} />
-                          </div>
-                          <span className="text-xs text-muted-foreground w-8 flex-shrink-0">{project.progress}%</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+            {recentActivity.length === 0 ? (
+              <div className="text-center py-8">
+                <span className="material-icons-outlined text-muted-foreground/40 block mb-2" style={{ fontSize: 32 }}>history</span>
+                <p className="text-sm text-muted-foreground">No recent activity</p>
+              </div>
+            ) : (
+              recentActivity.map((item, i) => (
+                <div key={item.id} className={`flex items-start gap-3 px-5 py-3.5 hover:bg-muted/20 transition-colors ${i < recentActivity.length - 1 ? 'border-b border-border/40' : ''}`}>
+                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                    <span className="material-icons-outlined text-muted-foreground" style={{ fontSize: 16 }}>{item.icon}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium leading-tight">{item.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed truncate">{item.description}</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">{item.projectName} · {item.date}</p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </section>
       </div>
     </>
   );
+}
+
+function getActivityIcon(type: string): string {
+  const map: Record<string, string> = {
+    created: 'add_circle',
+    meeting: 'groups',
+    status: 'change_circle',
+    call: 'call',
+    email: 'mail',
+    invoice: 'receipt_long',
+    note: 'sticky_note_2',
+  };
+  return map[type] || 'circle';
 }

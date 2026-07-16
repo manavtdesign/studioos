@@ -87,13 +87,9 @@
 @layer components {
   /* ── Sidebar ── */
   .sidebar-item {
-    @apply flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm transition-all duration-150;
+    @apply flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm transition-colors duration-150;
   }
   .sidebar-item-active {
-    background: rgba(255,255,255,0.45);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     @apply text-foreground font-medium;
   }
   .sidebar-item-hover:hover {
@@ -102,8 +98,8 @@
     -webkit-backdrop-filter: blur(6px);
     @apply text-foreground;
   }
-  .nav-icon { @apply text-foreground/60; }
-  .nav-label { @apply text-foreground/70; }
+  .nav-icon { @apply text-muted-foreground; }
+  .nav-label { @apply text-muted-foreground; }
   .sidebar-item-active .nav-icon,
   .sidebar-item-active .nav-label { @apply text-foreground; }
   .sidebar-item-hover:hover .nav-icon,
