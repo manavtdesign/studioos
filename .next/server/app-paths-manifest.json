@@ -2,5 +2,6 @@
   "/(app)/dashboard/page": "app/(app)/dashboard/page.js",
   "/(app)/settings/page": "app/(app)/settings/page.js",
   "/(app)/projects/page": "app/(app)/projects/page.js",
+  "/(app)/notifications/page": "app/(app)/notifications/page.js",
   "/(app)/crm/leads/page": "app/(app)/crm/leads/page.js"
 }
