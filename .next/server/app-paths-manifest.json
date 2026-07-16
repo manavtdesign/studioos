@@ -4,5 +4,5 @@
   "/(app)/contacts/page": "app/(app)/contacts/page.js",
   "/(app)/notifications/page": "app/(app)/notifications/page.js",
   "/(app)/projects/page": "app/(app)/projects/page.js",
-  "/(app)/crm/leads/[id]/page": "app/(app)/crm/leads/[id]/page.js"
+  "/(app)/products/page": "app/(app)/products/page.js"
 }
