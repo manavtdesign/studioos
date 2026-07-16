@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/crm/EmptyState';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { ProjectStatusBadge } from '@/components/projects/ProjectStatusBadge';
 import { NewProjectModal, NewProjectData } from '@/components/projects/NewProjectModal';
+import { useActivity } from '@/lib/activity-context';
 
 const SORT_OPTIONS = [
   { label: 'Project Name', value: 'name' },
@@ -23,6 +24,7 @@ const FILTER_TYPES = ['All Types', ...PROJECT_TYPES];
 export default function ProjectsPage() {
   const { projects, togglePin, updateProject, addProject } = useProjects();
   const { clients } = useCrm();
+  const { addActivity } = useActivity();
   const [view, setView] = useState<'card' | 'table'>('card');
   const [showModal, setShowModal] = useState(false);
 
@@ -114,6 +116,12 @@ export default function ProjectsPage() {
       tasks: [],
     };
     addProject(newProject);
+    addActivity({
+      title: 'Project Created',
+      description: `New project "${data.name}" created`,
+      icon: 'create_new_folder',
+      source: data.name,
+    });
   };
 
   return (
@@ -187,6 +195,11 @@ export default function ProjectsPage() {
                         {t}{typeFilter === t && <span className="material-icons-outlined" style={{ fontSize: 13 }}>check</span>}
                       </button>
                     ))}
+                    {hasTypeFilter && (
+                      <div className="border-t border-border/40 px-3 pt-2 pb-1">
+                        <button onClick={() => { setTypeFilter('All Types'); setShowTypeMenu(false); }} className="text-xs text-muted-foreground hover:text-foreground">Clear Filters</button>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
@@ -298,7 +311,7 @@ export default function ProjectsPage() {
               onClick={() => setShowModal(true)}
               className="btn-primary"
             >
-              New Project
+              + New Project
             </button>
           </div>
         </div>

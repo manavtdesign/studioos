@@ -6,6 +6,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useProjects } from '@/lib/projects-context';
+import { useActivity } from '@/lib/activity-context';
 import { SelectDropdown } from '@/components/projects/SelectDropdown';
 
 interface Task {
@@ -87,6 +88,7 @@ function DatePickerInline({ value, onChange }: { value?: Date; onChange: (date: 
 
 export default function TasksPage() {
   const { projects } = useProjects();
+  const { addActivity } = useActivity();
   const projectNames = ['All', ...projects.map(p => p.name)];
   const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
   const [view, setView] = useState<'table' | 'kanban'>('table');
@@ -105,12 +107,28 @@ export default function TasksPage() {
   const [newTask, setNewTask] = useState({ title: '', project: '', priority: 'Medium' as Task['priority'], status: 'To Do' as Task['status'], due: '' });
 
   const toggleComplete = (id: string) => {
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed, status: !t.completed ? 'Done' : 'To Do' } : t));
+    setTasks(prev => prev.map(t => {
+      if (t.id !== id) return t;
+      const updated = { ...t, completed: !t.completed, status: (!t.completed ? 'Done' : 'To Do') as Task['status'] };
+      addActivity({
+        title: updated.completed ? 'Task Completed' : 'Task Reopened',
+        description: `"${t.title}" marked as ${updated.completed ? 'complete' : 'incomplete'}`,
+        icon: updated.completed ? 'check_circle' : 'task_alt',
+        source: 'Tasks',
+      });
+      return updated;
+    }));
   };
 
   const saveEdit = (updated: Task) => {
     setTasks(prev => prev.map(t => t.id === updated.id ? updated : t));
     setEditingTask(null);
+    addActivity({
+      title: 'Task Updated',
+      description: `"${updated.title}" details were edited`,
+      icon: 'edit',
+      source: 'Tasks',
+    });
   };
 
   const addTask = () => {
@@ -127,6 +145,12 @@ export default function TasksPage() {
       completed: false,
     };
     setTasks(prev => [...prev, created]);
+    addActivity({
+      title: 'Task Added',
+      description: `New task "${newTask.title}" created`,
+      icon: 'task_alt',
+      source: 'Tasks',
+    });
     setNewTask({ title: '', project: '', priority: 'Medium', status: 'To Do', due: '' });
     setShowAddPanel(false);
   };

@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { SidePanel } from '@/components/ui/SidePanel';
 import { EmptyState } from '@/components/crm/EmptyState';
+import { useActivity } from '@/lib/activity-context';
 
 interface Vendor {
   id: string;
@@ -30,6 +31,7 @@ const mockVendors: Vendor[] = [
 
 export default function VendorsPage() {
   const [vendors, setVendors] = useState<Vendor[]>(mockVendors);
+  const { addActivity } = useActivity();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [showFilterMenu, setShowFilterMenu] = useState(false);
@@ -58,6 +60,12 @@ export default function VendorsPage() {
       status: 'Active',
     };
     setVendors(prev => [created, ...prev]);
+    addActivity({
+      title: 'Vendor Added',
+      description: `"${newVendor.name}" added as a new vendor`,
+      icon: 'local_shipping',
+      source: 'Vendors',
+    });
     setNewVendor({ name: '', category: 'Furniture', contact: '', email: '', phone: '', discount: '' });
     setShowAddPanel(false);
   };
@@ -149,7 +157,7 @@ export default function VendorsPage() {
           </div>
 
           <button onClick={() => setShowAddPanel(true)} className="btn-primary">
-            Add Vendor
+            + Add Vendor
           </button>
         </div>
 

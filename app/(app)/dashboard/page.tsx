@@ -175,7 +175,7 @@ export default function DashboardPage() {
     { icon: 'create_new_folder', heading: 'Create Project', description: 'Start a new project from scratch.', onClick: () => setShowNewProject(true) },
     { icon: 'bookmark_add', heading: 'Add Product', description: 'Add a new product to the library.', onClick: () => setShowAddProduct(true) },
     { icon: 'person_add', heading: 'Add Client', description: 'Add a new client.', onClick: () => setShowAddClient(true) },
-    { icon: 'local_shipping', heading: 'Add Supplier', description: 'Add a new supplier to contacts', onClick: () => setShowAddSupplier(true) },
+    { icon: 'box_add', heading: 'Add Supplier', description: 'Add a new supplier.', onClick: () => setShowAddSupplier(true) },
   ];
 
   return (
@@ -308,7 +308,7 @@ export default function DashboardPage() {
         {/* Quick Actions — 2x2 grid */}
         <section>
           <h2 className="font-semibold mb-3">Quick Actions</h2>
-          <div className="grid grid-cols-2 gap-3 max-w-lg">
+          <div className="grid grid-cols-2 gap-3">
             {quickActions.map((action, i) => (
               <button key={i} onClick={action.onClick}
                 className="card-base card-hover p-4 flex items-start gap-3 text-left w-full">

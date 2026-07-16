@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { PROJECT_TYPES, LEAD_SOURCES, LEAD_STATUSES, Lead } from '@/lib/crm-data';
 import { useCrm } from '@/lib/crm-context';
+import { useActivity } from '@/lib/activity-context';
 import { DesignerSelect } from './DesignerSelect';
 
 import { SidePanel } from '@/components/ui/SidePanel';
@@ -21,6 +22,7 @@ export function NewLeadModal({ onClose, onAdd }: NewLeadModalProps) {
   });
 
   const { addLead } = useCrm();
+  const { addActivity } = useActivity();
 
   const set = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -52,6 +54,12 @@ export function NewLeadModal({ onClose, onAdd }: NewLeadModalProps) {
     };
     if (onAdd) onAdd(created);
     else addLead(created);
+    addActivity({
+      title: 'Lead Created',
+      description: `New lead "${form.firstName} ${form.lastName}" added`,
+      icon: 'person_add',
+      source: 'Leads',
+    });
     onClose();
   };
 

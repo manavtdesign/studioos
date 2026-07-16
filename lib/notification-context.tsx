@@ -14,7 +14,6 @@ interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
   markAsRead: (id: string) => void;
-  markAsUnread: (id: string) => void;
   markAllAsRead: () => void;
   clearAll: () => void;
 }
@@ -25,9 +24,9 @@ const mockNotifications: Notification[] = [
   { id: 'n1', title: 'Project milestone reached', description: 'Hampton Residence has moved to Design Development phase.', time: '2 hours ago', read: false },
   { id: 'n2', title: 'New lead enquiry', description: 'Sophie Williams submitted an enquiry via Instagram.', time: '4 hours ago', read: false },
   { id: 'n3', title: 'Invoice paid', description: 'INV-0018 payment received from Alexandra Thompson.', time: 'Yesterday', read: false },
-  { id: 'n4', title: 'Task assigned', description: 'Finalize stone selection for Hampton Residence assigned to you.', time: 'Yesterday', read: true },
-  { id: 'n5', title: 'Meeting reminder', description: 'Concept presentation with James & Sarah tomorrow at 10 AM.', time: '2 days ago', read: true },
-  { id: 'n6', title: 'Document uploaded', description: 'Kitchen layout drawings uploaded to Urban Loft Project.', time: '3 days ago', read: true },
+  { id: 'n4', title: 'Task assigned', description: 'Finalize stone selection for Hampton Residence assigned to you.', time: 'Yesterday', read: false },
+  { id: 'n5', title: 'Meeting reminder', description: 'Concept presentation with James & Sarah tomorrow at 10 AM.', time: '2 days ago', read: false },
+  { id: 'n6', title: 'Document uploaded', description: 'Kitchen layout drawings uploaded to Urban Loft Project.', time: '3 days ago', read: false },
 ];
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
@@ -36,15 +35,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const markAsRead = (id: string) => {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
-  };
-
-  const markAsUnread = (id: string) => {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: false } : n)));
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
   };
 
   const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setNotifications([]);
   };
 
   const clearAll = () => {
@@ -52,7 +47,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <NotificationContext.Provider value={{ notifications, unreadCount, markAsRead, markAsUnread, markAllAsRead, clearAll }}>
+    <NotificationContext.Provider value={{ notifications, unreadCount, markAsRead, markAllAsRead, clearAll }}>
       {children}
     </NotificationContext.Provider>
   );

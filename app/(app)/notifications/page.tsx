@@ -3,60 +3,59 @@
 import { useState } from 'react';
 import { useNotifications } from '@/lib/notification-context';
 
-type Tab = 'all' | 'unread' | 'read';
+type Tab = 'all' | 'unread';
 
 export default function NotificationsPage() {
-  const { notifications, unreadCount, markAsRead, markAsUnread, markAllAsRead, clearAll } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotifications();
   const [activeTab, setActiveTab] = useState<Tab>('all');
 
   const filtered = notifications.filter(n => {
     if (activeTab === 'unread') return !n.read;
-    if (activeTab === 'read') return n.read;
     return true;
   });
 
-  const readCount = notifications.length - unreadCount;
-
   return (
     <div className="space-y-5">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-semibold">Notifications</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">{unreadCount} unread of {notifications.length} total</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {unreadCount > 0 && (
-            <button onClick={markAllAsRead} className="notion-button border border-border text-sm">
-              <span className="material-icons-outlined" style={{ fontSize: 16 }}>done_all</span>
-              Mark all read
-            </button>
-          )}
-          {notifications.length > 0 && (
-            <button onClick={clearAll} className="notion-button border border-border text-sm text-muted-foreground hover:text-foreground">
-              <span className="material-icons-outlined" style={{ fontSize: 16 }}>delete_outline</span>
-              Clear all
-            </button>
-          )}
-        </div>
+      <div>
+        <h1 className="text-2xl font-semibold">Notifications</h1>
+        <p className="text-muted-foreground text-sm mt-0.5">{unreadCount} unread of {notifications.length} total</p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 border-b border-border">
-        {([
-          { id: 'all' as const, label: 'All', count: notifications.length },
-          { id: 'unread' as const, label: 'Unread', count: unreadCount },
-          { id: 'read' as const, label: 'Read', count: readCount },
-        ]).map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
-              activeTab === tab.id ? 'border-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}>
-            {tab.label}
-            <span className={`text-xs px-1.5 py-0.5 rounded-full ${activeTab === tab.id ? 'bg-foreground/10 text-foreground' : 'bg-muted text-muted-foreground'}`}>
-              {tab.count}
-            </span>
+      {/* Toolbar: tabs + action buttons inline */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Tabs — styled like Projects All/Archived */}
+        <div className="flex border border-border rounded-lg overflow-hidden">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+              activeTab === 'all' ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+            }`}
+          >
+            All
           </button>
-        ))}
+          <button
+            onClick={() => setActiveTab('unread')}
+            className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+              activeTab === 'unread' ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+            }`}
+          >
+            Unread
+          </button>
+        </div>
+
+        <div className="flex-1" />
+
+        {/* Action buttons inline */}
+        {unreadCount > 0 && (
+          <button onClick={markAllAsRead} className="notion-button border border-border text-sm">
+            Mark all read
+          </button>
+        )}
+        {notifications.length > 0 && (
+          <button onClick={clearAll} className="notion-button border border-border text-sm text-muted-foreground hover:text-foreground">
+            Clear all
+          </button>
+        )}
       </div>
 
       {/* List */}
@@ -64,10 +63,10 @@ export default function NotificationsPage() {
         {filtered.length === 0 ? (
           <div className="text-center py-16">
             <span className="material-icons-outlined text-muted-foreground/40 block mb-3" style={{ fontSize: 40 }}>
-              {activeTab === 'unread' ? 'mark_email_read' : activeTab === 'read' ? 'mark_email_unread' : 'notifications_none'}
+              {activeTab === 'unread' ? 'mark_email_read' : 'notifications_none'}
             </span>
             <p className="text-sm text-muted-foreground">
-              {activeTab === 'unread' ? 'No unread notifications' : activeTab === 'read' ? 'No read notifications' : 'No notifications'}
+              {activeTab === 'unread' ? 'No unread notifications' : 'No notifications'}
             </p>
           </div>
         ) : (
@@ -86,22 +85,14 @@ export default function NotificationsPage() {
                 <p className="text-xs text-muted-foreground/60 mt-1">{n.time}</p>
               </div>
 
-              {/* Actions */}
-              <div className="flex items-center gap-1 flex-shrink-0">
-                {!n.read ? (
-                  <button onClick={() => markAsRead(n.id)} title="Mark as read"
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg hover:bg-muted transition-colors whitespace-nowrap">
-                    <span className="material-icons-outlined" style={{ fontSize: 14 }}>done_all</span>
-                    Mark read
-                  </button>
-                ) : (
-                  <button onClick={() => markAsUnread(n.id)} title="Mark as unread"
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg hover:bg-muted transition-colors whitespace-nowrap">
-                    <span className="material-icons-outlined" style={{ fontSize: 14 }}>undo</span>
-                    Unread
-                  </button>
-                )}
-              </div>
+              {/* Mark read — removes notification */}
+              {!n.read && (
+                <button onClick={() => markAsRead(n.id)} title="Mark as read"
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg hover:bg-muted transition-colors whitespace-nowrap flex-shrink-0">
+                  <span className="material-icons-outlined" style={{ fontSize: 14 }}>done_all</span>
+                  Mark read
+                </button>
+              )}
             </div>
           ))
         )}

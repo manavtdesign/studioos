@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { SidePanel } from '@/components/ui/SidePanel';
 import { EmptyState } from '@/components/crm/EmptyState';
+import { useActivity } from '@/lib/activity-context';
 
 interface Product {
   id: string;
@@ -46,6 +47,7 @@ const statusColors: Record<string, string> = {
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>(mockProducts);
+  const { addActivity } = useActivity();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [showFilterMenu, setShowFilterMenu] = useState(false);
@@ -77,6 +79,12 @@ export default function ProductsPage() {
       imageIndex: Math.floor(Math.random() * coverGradients.length),
     };
     setProducts(prev => [created, ...prev]);
+    addActivity({
+      title: 'Product Added',
+      description: `"${newProduct.name}" added to the product library`,
+      icon: 'bookmark_add',
+      source: 'Products',
+    });
     setNewProduct({ name: '', category: 'Furniture', vendor: '', price: '', unit: 'each', leadTime: '' });
     setShowAddPanel(false);
   };
@@ -177,7 +185,7 @@ export default function ProductsPage() {
           </div>
 
           <button onClick={() => setShowAddPanel(true)} className="btn-primary">
-            Add Product
+            + Add Product
           </button>
         </div>
 

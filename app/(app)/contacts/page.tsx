@@ -121,8 +121,8 @@ export default function ContactsPage() {
 
   const currentCount = typeFilter === 'leads' ? filteredLeads.length : typeFilter === 'clients' ? filteredClients.length : filteredSuppliers.length;
   const addButton = typeFilter === 'suppliers'
-    ? { label: 'Add Supplier', onClick: () => setShowAddSupplier(true), icon: 'local_shipping' }
-    : { label: 'Add Client', onClick: () => setShowAddClient(true), icon: 'person_add' };
+    ? { label: '+ Add Supplier', onClick: () => setShowAddSupplier(true), icon: 'local_shipping' }
+    : { label: '+ Add Client', onClick: () => setShowAddClient(true), icon: 'person_add' };
 
   return (
     <>
@@ -222,10 +222,9 @@ export default function ContactsPage() {
             {search && <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><span className="material-icons-outlined" style={{ fontSize: 14 }}>close</span></button>}
           </div>
 
-          <button onClick={addButton.onClick} className="btn-primary">
-            <span className="material-icons-outlined" style={{ fontSize: 16 }}>{addButton.icon}</span>
-            {addButton.label}
-          </button>
+            <button onClick={addButton.onClick} className="btn-primary">
+              + {addButton.label}
+            </button>
         </div>
 
         {/* Content */}

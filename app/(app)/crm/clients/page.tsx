@@ -8,6 +8,7 @@ import { ClientStatusBadge } from '@/components/crm/StatusBadge';
 import { EmptyState } from '@/components/crm/EmptyState';
 import { PinButton } from '@/components/crm/PinButton';
 import { SidePanel } from '@/components/ui/SidePanel';
+import { useActivity } from '@/lib/activity-context';
 
 const SORT_OPTIONS = [
   { label: 'Name', value: 'name' },
@@ -19,6 +20,7 @@ export default function ClientsPage() {
   const [view, setView] = useState<'card' | 'table'>('card');
   const [showModal, setShowModal] = useState(false);
   const { clients, toggleClientPin, addClient } = useCrm();
+  const { addActivity } = useActivity();
 
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
@@ -77,6 +79,12 @@ export default function ClientsPage() {
       clientSince: new Date().toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }),
     };
     addClient(created);
+    addActivity({
+      title: 'Client Created',
+      description: `${newClient.name} added as a new client`,
+      icon: 'person_add',
+      source: 'Clients',
+    });
     setNewClient({ name: '', company: '', email: '', phone: '' });
     setShowModal(false);
   };
@@ -188,7 +196,7 @@ export default function ClientsPage() {
           </div>
 
           <button onClick={() => setShowModal(true)} className="btn-primary">
-            New Client
+            + New Client
           </button>
         </div>
 

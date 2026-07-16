@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -17,8 +17,8 @@ import { GlobalSearch } from '@/components/GlobalSearch';
 const NAV_ITEMS = [
   { href: '/dashboard', icon: 'home', label: 'Home' },
   { href: '/projects', icon: 'folder', label: 'Projects' },
-  { href: '/products', icon: 'bookmark', label: 'Products Library' },
-  { href: '/contacts', icon: 'recent_actors', label: 'Contacts' },
+  { href: '/products', icon: 'bookmark_border', label: 'Products Library' },
+  { href: '/contacts', icon: 'person', label: 'Contacts' },
   { href: '/notifications', icon: 'notifications', label: 'Notifications' },
 ];
 
@@ -30,6 +30,17 @@ function AppLayoutInner({ children }: { children: ReactNode }) {
     if (href === '/dashboard') return pathname === '/dashboard';
     return pathname.startsWith(href);
   }
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowSearch(true);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
 
   return (
     <div className="flex h-screen bg-background">
@@ -43,14 +54,17 @@ function AppLayoutInner({ children }: { children: ReactNode }) {
           </Link>
         </div>
 
-        {/* Search Button */}
+        {/* Search Button + ⌘K */}
         <div className="px-2 pt-1 pb-2 flex-shrink-0">
           <button
             onClick={() => setShowSearch(true)}
             className="sidebar-item sidebar-item-hover w-full"
           >
             <span className="material-icons-outlined nav-icon" style={{ fontSize: 18 }}>search</span>
-            <span className="nav-label" style={{ fontSize: 15 }}>Search</span>
+            <span className="nav-label" style={{ fontSize: 14 }}>Search</span>
+            <span className="ml-auto flex items-center justify-center text-[10px] font-medium text-muted-foreground border border-border rounded px-1 py-0.5 leading-none select-none">
+              ⌘K
+            </span>
           </button>
         </div>
 
@@ -62,7 +76,7 @@ function AppLayoutInner({ children }: { children: ReactNode }) {
               <Link key={item.href} href={item.href}
                 className={`sidebar-item ${active ? 'sidebar-item-active' : 'sidebar-item-hover'}`}>
                 <span className="material-icons-outlined nav-icon" style={{ fontSize: 18 }}>{item.icon}</span>
-                <span className="nav-label" style={{ fontSize: 15 }}>{item.label}</span>
+                <span className="nav-label" style={{ fontSize: 14 }}>{item.label}</span>
               </Link>
             );
           })}

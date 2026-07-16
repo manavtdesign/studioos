@@ -152,7 +152,7 @@ export default function LeadsPage() {
           </div>
 
           <button onClick={() => setShowModal(true)} className="btn-primary">
-            New Lead
+            + New Lead
           </button>
         </div>
 
