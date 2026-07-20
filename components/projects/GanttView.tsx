@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useRef, useEffect } from 'react';
-import { Plus, MoveHorizontal as MoreHorizontal, Pencil, Trash2, CircleCheck as CheckCircle2, ChevronUp, ChevronDown, Check } from 'lucide-react';
+import { Plus, Ellipsis as MoreHorizontal, Pencil, Trash2, CircleCheck as CheckCircle2, ChevronUp, ChevronDown, Check } from 'lucide-react';
 import { SidePanel } from '@/components/ui/SidePanel';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { PROJECT_PHASES } from '@/lib/projects-data';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Search, Filter, Plus, Calendar, X, MoveHorizontal as MoreHorizontal, Pencil, Trash2, GripVertical, Check, ChevronDown } from 'lucide-react';
+import { Search, Filter, Plus, Calendar, X, Ellipsis as MoreHorizontal, Pencil, Trash2, GripVertical, Check, ChevronDown } from 'lucide-react';
 import { Project, PROJECT_PHASES } from '@/lib/projects-data';
 import { Task, TaskStatus } from '@/lib/crm-data';
 import { SidePanel } from '@/components/ui/SidePanel';

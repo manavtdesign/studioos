@@ -6,7 +6,7 @@ import {
   productStatusConfig, flagConfig, PRODUCT_STATUSES, PRODUCT_FLAGS,
 } from '@/lib/schedules-data';
 import { DynamicIcon } from '@/lib/icons';
-import { GripVertical, Plus, Image as ImageIcon, ExternalLink, ChevronDown, Check, MoveHorizontal as MoreHorizontal, ChevronLeft } from 'lucide-react';
+import { GripVertical, Plus, Image as ImageIcon, ExternalLink, ChevronDown, Check, Ellipsis as MoreHorizontal, ChevronLeft } from 'lucide-react';
 
 interface ScheduleProductCardProps {
   product: ScheduleProduct;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { MoveHorizontal as MoreHorizontal, Settings, Copy, Archive, Trash2 } from 'lucide-react';
+import { Ellipsis as MoreHorizontal, Settings, Copy, Archive, Trash2 } from 'lucide-react';
 import { Project, formatBudget } from '@/lib/projects-data';
 import { ProjectStatusBadge } from './ProjectStatusBadge';
 import { mockClients } from '@/lib/crm-data';

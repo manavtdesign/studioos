@@ -8,7 +8,7 @@ import {
 import { ProductDetailsModal } from './ProductDetailsModal';
 import { StatusDropdown } from './ProductDetailsModal';
 import { DynamicIcon } from '@/lib/icons';
-import { GripVertical, Plus, Image as ImageIcon, ExternalLink, MoveHorizontal as MoreHorizontal, Check, ChevronLeft } from 'lucide-react';
+import { GripVertical, Plus, Image as ImageIcon, ExternalLink, Ellipsis as MoreHorizontal, Check, ChevronLeft } from 'lucide-react';
 
 interface ProductRowProps {
   product: ScheduleProduct;

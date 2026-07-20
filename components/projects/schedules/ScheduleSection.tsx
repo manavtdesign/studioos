@@ -8,7 +8,7 @@ import {
 } from '@/lib/schedules-data';
 import { ScheduleProductCard } from './ScheduleProductCard';
 import { ProductSidePanel } from './ProductSidePanel';
-import { ChevronRight, ChevronDown, ArrowUp, ArrowDown, MoveHorizontal as MoreHorizontal, Pencil, Trash2, Plus, Package } from 'lucide-react';
+import { ChevronRight, ChevronDown, ArrowUp, ArrowDown, Ellipsis as MoreHorizontal, Pencil, Trash2, Plus, Package } from 'lucide-react';
 
 interface ScheduleSectionProps {
   section: ScheduleSectionType;

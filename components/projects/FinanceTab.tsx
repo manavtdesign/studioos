@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Search, Plus, MoveHorizontal as MoreHorizontal, Eye, FileDown, Trash2, Receipt, ChevronRight } from 'lucide-react';
+import { Search, Plus, Ellipsis as MoreHorizontal, Eye, FileDown, Trash2, Receipt, ChevronRight } from 'lucide-react';
 import { Project, Invoice, formatBudget } from '@/lib/projects-data';
 import { SidePanel } from '@/components/ui/SidePanel';
 
