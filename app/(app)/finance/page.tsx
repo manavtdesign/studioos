@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { DatePicker } from '@/components/ui/DatePicker';
-import { formatCurrency } from '@/lib/utils';
-import { ChevronDown, Check } from 'lucide-react';
+import { ChevronDown, Check, TrendingUp, FileText, CircleAlert as AlertCircle } from 'lucide-react';
+
+function formatCurrency(amount: number): string {
+  return `A$${amount.toLocaleString('en-AU')}`;
+}
 
 const monthOptions = [
   { label: 'Current Month', value: 'current' },
@@ -11,7 +13,6 @@ const monthOptions = [
   { label: 'Last 3 Months', value: '3m' },
   { label: 'Last 6 Months', value: '6m' },
   { label: 'This Year', value: 'year' },
-  { label: 'Custom Range', value: 'custom' },
 ];
 
 const allInvoices = [
@@ -26,11 +27,11 @@ const allInvoices = [
 ];
 
 const statusColors: Record<string, string> = {
-  'Paid': 'bg-green-50 text-green-700',
-  'Pending': 'bg-amber-50 text-amber-700',
-  'Overdue': 'bg-red-50 text-red-700',
-  'Upcoming': 'bg-blue-50 text-blue-700',
-  'Draft': 'bg-muted text-muted-foreground',
+  Paid: 'bg-green-50 text-green-700',
+  Pending: 'bg-amber-50 text-amber-700',
+  Overdue: 'bg-red-50 text-red-700',
+  Upcoming: 'bg-blue-50 text-blue-700',
+  Draft: 'bg-muted text-muted-foreground',
 };
 
 const statusFilters = ['All', 'Pending', 'Paid', 'Overdue', 'Upcoming'];
@@ -39,13 +40,11 @@ function formatDate(d: Date): string {
   return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function getDateRange(filter: string, customStart?: string, customEnd?: string): { start: Date; end: Date } {
+function getDateRange(filter: string): { start: Date; end: Date } {
   const now = new Date();
-  const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
   switch (filter) {
     case 'current':
-      return { start: thisMonth, end: new Date(now.getFullYear(), now.getMonth() + 1, 0) };
+      return { start: new Date(now.getFullYear(), now.getMonth(), 1), end: new Date(now.getFullYear(), now.getMonth() + 1, 0) };
     case 'last':
       return { start: new Date(now.getFullYear(), now.getMonth() - 1, 1), end: new Date(now.getFullYear(), now.getMonth(), 0) };
     case '3m':
@@ -54,122 +53,96 @@ function getDateRange(filter: string, customStart?: string, customEnd?: string):
       return { start: new Date(now.getFullYear(), now.getMonth() - 6, 1), end: new Date(now.getFullYear(), now.getMonth() + 1, 0) };
     case 'year':
       return { start: new Date(now.getFullYear(), 0, 1), end: new Date(now.getFullYear(), 11, 31) };
-    case 'custom':
-      return {
-        start: customStart ? new Date(customStart) : new Date(now.getFullYear(), 0, 1),
-        end: customEnd ? new Date(customEnd) : now,
-      };
     default:
-      return { start: thisMonth, end: new Date(now.getFullYear(), now.getMonth() + 1, 0) };
+      return { start: new Date(now.getFullYear(), now.getMonth(), 1), end: new Date(now.getFullYear(), now.getMonth() + 1, 0) };
   }
 }
 
 export default function FinancePage() {
-  const [monthFilter, setMonthFilter] = useState('current');
+  const [monthFilter, setMonthFilter] = useState('year');
   const [showMonthMenu, setShowMonthMenu] = useState(false);
   const [statusFilter, setStatusFilter] = useState('All');
-  const [customStart, setCustomStart] = useState('');
-  const [customEnd, setCustomEnd] = useState('');
   const monthMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (monthMenuRef.current && !monthMenuRef.current.contains(e.target as Node)) {
-        setShowMonthMenu(false);
-      }
+      if (monthMenuRef.current && !monthMenuRef.current.contains(e.target as Node)) setShowMonthMenu(false);
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const dateRange = getDateRange(monthFilter, customStart, customEnd);
+  const dateRange = getDateRange(monthFilter);
 
   const invoices = useMemo(() => {
     return allInvoices.filter((inv) => {
-      // Status filter
       if (statusFilter !== 'All' && inv.status !== statusFilter) return false;
-
-      // Date range filter (based on issued date)
-      if (inv.issued < dateRange.start || inv.issued > dateRange.end) return false;
-
-      return true;
+      return inv.issued >= dateRange.start && inv.issued <= dateRange.end;
     });
   }, [statusFilter, dateRange]);
 
-  const totalRevenue = invoices.filter(i => i.status === 'Paid').reduce((s, i) => s + i.amount, 0);
-  const outstanding = invoices.filter(i => i.status === 'Pending').reduce((s, i) => s + i.outstanding, 0);
-  const overdue = invoices.filter(i => i.status === 'Overdue').reduce((s, i) => s + i.outstanding, 0);
-  const upcoming = invoices.filter(i => i.status === 'Upcoming').reduce((s, i) => s + i.outstanding, 0);
+  const totalRevenue = allInvoices.filter(i => i.status === 'Paid').reduce((s, i) => s + i.amount, 0);
+  const paidCount = allInvoices.filter(i => i.status === 'Paid').length;
+  const totalIssued = allInvoices.reduce((s, i) => s + i.amount, 0);
+  const issuedCount = allInvoices.length;
+  const overdueTotal = allInvoices.filter(i => i.status === 'Overdue').reduce((s, i) => s + i.outstanding, 0);
+  const overdueCount = allInvoices.filter(i => i.status === 'Overdue').length;
 
   const selectedMonth = monthOptions.find(m => m.value === monthFilter);
-  const isCustom = monthFilter === 'custom';
 
   return (
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Invoices</h1>
-        <button className="notion-button bg-foreground text-background hover:bg-foreground/90">
-          Create Invoice
-        </button>
+        <button className="btn-primary">Create Invoice</button>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="kpi-card">
-          <p className="text-sm text-muted-foreground">Total Revenue</p>
-          <div className="flex items-baseline gap-1.5 mt-1">
-            <span className="text-2xl font-semibold">{formatCurrency(totalRevenue)}</span>
+      {/* KPI Cards — 3 columns */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="kpi-card flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+            <TrendingUp size={20} className="text-muted-foreground" />
           </div>
-          <p className="text-xs text-green-600 mt-2">+12% from last period</p>
-        </div>
-        <div className="kpi-card">
-          <p className="text-sm text-muted-foreground">Outstanding</p>
-          <div className="flex items-baseline gap-1.5 mt-1">
-            <span className="text-2xl font-semibold">{formatCurrency(outstanding)}</span>
-          </div>
-          <div className="mt-2">
-            <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">
-              {invoices.filter(i => i.status === 'Pending').length} invoice{invoices.filter(i => i.status === 'Pending').length !== 1 ? 's' : ''}
-            </span>
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Total Project Earnings</p>
+            <p className="text-xl font-semibold mt-0.5 truncate">{formatCurrency(totalRevenue)}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{paidCount} paid invoice{paidCount !== 1 ? 's' : ''}</p>
           </div>
         </div>
-        <div className="kpi-card">
-          <p className="text-sm text-muted-foreground">Overdue</p>
-          <div className="flex items-baseline gap-1.5 mt-1">
-            <span className="text-2xl font-semibold">{formatCurrency(overdue)}</span>
+
+        <div className="kpi-card flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+            <FileText size={20} className="text-muted-foreground" />
           </div>
-          <div className="mt-2">
-            <span className={`text-xs px-2 py-0.5 rounded-full ${
-              overdue > 0
-                ? 'bg-red-50 text-red-700'
-                : 'text-muted-foreground'
-            }`}>
-              {invoices.filter(i => i.status === 'Overdue').length} invoice{invoices.filter(i => i.status === 'Overdue').length !== 1 ? 's' : ''}
-            </span>
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Total Invoices Issued</p>
+            <p className="text-xl font-semibold mt-0.5 truncate">{formatCurrency(totalIssued)}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{issuedCount} invoice{issuedCount !== 1 ? 's' : ''} issued</p>
           </div>
         </div>
-        <div className="kpi-card">
-          <p className="text-sm text-muted-foreground">Upcoming</p>
-          <div className="flex items-baseline gap-1.5 mt-1">
-            <span className="text-2xl font-semibold">{formatCurrency(upcoming)}</span>
+
+        <div className="kpi-card flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+            <AlertCircle size={20} className="text-muted-foreground" />
           </div>
-          <p className="text-xs text-muted-foreground mt-2">Due in next 7 days</p>
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Total Overdue Invoices</p>
+            <p className="text-xl font-semibold mt-0.5 truncate">{formatCurrency(overdueTotal)}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{overdueCount} overdue invoice{overdueCount !== 1 ? 's' : ''}</p>
+          </div>
         </div>
       </div>
 
-      {/* Filters row */}
+      {/* Filters */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        {/* Status filter tabs */}
         <div className="flex items-center gap-1">
           {statusFilters.map((s) => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1 text-sm rounded-full transition-colors ${
-                statusFilter === s
-                  ? 'bg-foreground text-background'
-                  : 'text-muted-foreground hover:bg-muted'
+              className={`px-3 h-8 text-sm rounded-lg transition-colors ${
+                statusFilter === s ? 'bg-foreground text-background font-medium' : 'text-muted-foreground hover:bg-muted'
               }`}
             >
               {s}
@@ -177,62 +150,35 @@ export default function FinancePage() {
           ))}
         </div>
 
-        {/* Date filter */}
-        <div className="flex items-center gap-2">
-          <div className="relative" ref={monthMenuRef}>
-            <button
-              onClick={() => setShowMonthMenu(!showMonthMenu)}
-              className="notion-button border border-border gap-1.5 text-sm"
-            >
-              {selectedMonth?.label}
-              <ChevronDown size={14} />
-            </button>
-            {showMonthMenu && (
-              <div className="absolute right-0 mt-1 w-64 bg-popover border border-border rounded-xl shadow-lg z-20 py-1">
-                {monthOptions.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => { setMonthFilter(opt.value); setShowMonthMenu(false); }}
-                    className={`flex items-center justify-between w-full px-4 py-2 text-sm text-left hover:bg-muted transition-colors ${
-                      monthFilter === opt.value ? 'text-foreground font-medium' : 'text-muted-foreground'
-                    }`}
-                  >
-                    {opt.label}
-                    {monthFilter === opt.value && (
-                      <Check size={14} />
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Custom range inputs */}
-          {isCustom && (
-            <div className="flex items-center gap-2">
-              <div className="w-36">
-                <DatePicker
-                  value={customStart}
-                  onChange={setCustomStart}
-                  placeholder="Start date"
-                />
-              </div>
-              <span className="text-muted-foreground text-sm">to</span>
-              <div className="w-36">
-                <DatePicker
-                  value={customEnd}
-                  onChange={setCustomEnd}
-                  placeholder="End date"
-                  align="right"
-                />
-              </div>
+        <div ref={monthMenuRef} className="relative">
+          <button
+            onClick={() => setShowMonthMenu(!showMonthMenu)}
+            className="notion-button border border-border gap-1.5"
+          >
+            {selectedMonth?.label}
+            <ChevronDown size={14} />
+          </button>
+          {showMonthMenu && (
+            <div className="absolute right-0 mt-1 w-52 bg-popover border border-border rounded-xl shadow-lg z-20 py-1">
+              {monthOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => { setMonthFilter(opt.value); setShowMonthMenu(false); }}
+                  className={`flex items-center justify-between w-full px-4 py-2 text-sm text-left hover:bg-muted transition-colors ${
+                    monthFilter === opt.value ? 'text-foreground font-medium' : 'text-muted-foreground'
+                  }`}
+                >
+                  {opt.label}
+                  {monthFilter === opt.value && <Check size={14} />}
+                </button>
+              ))}
             </div>
           )}
         </div>
       </div>
 
       {/* Invoice table */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="card-base overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="border-b border-border bg-muted/30">
@@ -248,16 +194,16 @@ export default function FinancePage() {
           </thead>
           <tbody>
             {invoices.map((invoice) => (
-              <tr key={invoice.id} className="hover:bg-muted/20 cursor-pointer border-b border-border/50 last:border-b-0">
+              <tr key={invoice.id} className="hover:bg-muted/20 cursor-pointer border-b border-border/50 last:border-b-0 transition-colors">
                 <td className="table-cell font-medium">{invoice.id}</td>
                 <td className="table-cell text-muted-foreground">{invoice.project}</td>
                 <td className="table-cell text-muted-foreground">{invoice.client}</td>
                 <td className="table-cell text-muted-foreground">{formatDate(invoice.issued)}</td>
-                <td className="table-cell text-right">{formatCurrency(invoice.amount)}</td>
-                <td className="table-cell text-right">{formatCurrency(invoice.outstanding)}</td>
+                <td className="table-cell text-right font-medium">{formatCurrency(invoice.amount)}</td>
+                <td className="table-cell text-right text-muted-foreground">{formatCurrency(invoice.outstanding)}</td>
                 <td className="table-cell text-muted-foreground">{formatDate(invoice.due)}</td>
                 <td className="table-cell">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[invoice.status] ?? 'bg-muted text-muted-foreground'}`}>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[invoice.status] ?? 'bg-muted text-muted-foreground'}`}>
                     {invoice.status}
                   </span>
                 </td>
@@ -265,7 +211,7 @@ export default function FinancePage() {
             ))}
             {invoices.length === 0 && (
               <tr>
-                <td colSpan={8} className="table-cell text-center text-muted-foreground py-10">
+                <td colSpan={8} className="table-cell text-center text-muted-foreground py-12">
                   No invoices match the selected filters.
                 </td>
               </tr>

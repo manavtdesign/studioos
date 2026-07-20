@@ -23,14 +23,34 @@ export interface ProjectTeam {
   supportDesigner: string | null;
 }
 
+export interface InvoiceLineItem {
+  id: string;
+  description: string;
+  hours: string;
+  rate: string;
+}
+
 export interface Invoice {
   id: string;
   number: string;
   clientName: string;
+  clientAddress?: string;
   amount: number;
   issuedDate: string;
   dueDate: string;
   status: 'Paid' | 'Unpaid' | 'Overdue' | 'Issued';
+  companyName?: string;
+  companyAddress?: string;
+  companySuburb?: string;
+  abn?: string;
+  accountHolder?: string;
+  bsb?: string;
+  accountNo?: string;
+  bankName?: string;
+  bicSwift?: string;
+  referenceDesc?: string;
+  lineItems?: InvoiceLineItem[];
+  notes?: string;
 }
 
 export interface Project {

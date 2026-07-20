@@ -544,6 +544,39 @@ video {
   --tw-backdrop-saturate:  ;
   --tw-backdrop-sepia:  ;
 }
+.container {
+  width: 100%;
+}
+@media (min-width: 640px) {
+
+  .container {
+    max-width: 640px;
+  }
+}
+@media (min-width: 768px) {
+
+  .container {
+    max-width: 768px;
+  }
+}
+@media (min-width: 1024px) {
+
+  .container {
+    max-width: 1024px;
+  }
+}
+@media (min-width: 1280px) {
+
+  .container {
+    max-width: 1280px;
+  }
+}
+@media (min-width: 1536px) {
+
+  .container {
+    max-width: 1536px;
+  }
+}
 /* ── Sidebar ── */
 .sidebar-item {
   display: flex;
@@ -1026,6 +1059,12 @@ html.dark { color-scheme: dark; }
 .z-\[60\] {
   z-index: 60;
 }
+.z-\[61\] {
+  z-index: 61;
+}
+.z-\[70\] {
+  z-index: 70;
+}
 .col-span-2 {
   grid-column: span 2 / span 2;
 }
@@ -1086,6 +1125,9 @@ html.dark { color-scheme: dark; }
 .mb-1\.5 {
   margin-bottom: 0.375rem;
 }
+.mb-10 {
+  margin-bottom: 2.5rem;
+}
 .mb-2 {
   margin-bottom: 0.5rem;
 }
@@ -1103,6 +1145,9 @@ html.dark { color-scheme: dark; }
 }
 .mb-6 {
   margin-bottom: 1.5rem;
+}
+.mb-8 {
+  margin-bottom: 2rem;
 }
 .ml-0 {
   margin-left: 0px;
@@ -1464,6 +1509,9 @@ html.dark { color-scheme: dark; }
 .max-w-2xl {
   max-width: 42rem;
 }
+.max-w-4xl {
+  max-width: 56rem;
+}
 .max-w-\[120px\] {
   max-width: 120px;
 }
@@ -1581,6 +1629,9 @@ html.dark { color-scheme: dark; }
 }
 .resize-none {
   resize: none;
+}
+.resize {
+  resize: both;
 }
 .list-none {
   list-style-type: none;
@@ -1776,6 +1827,9 @@ html.dark { color-scheme: dark; }
 .whitespace-nowrap {
   white-space: nowrap;
 }
+.whitespace-pre-line {
+  white-space: pre-line;
+}
 .break-words {
   overflow-wrap: break-word;
 }
@@ -1852,6 +1906,9 @@ html.dark { color-scheme: dark; }
 .border-t {
   border-top-width: 1px;
 }
+.border-t-2 {
+  border-top-width: 2px;
+}
 .border-dashed {
   border-style: dashed;
 }
@@ -1896,6 +1953,12 @@ html.dark { color-scheme: dark; }
 .border-foreground {
   border-color: hsl(var(--foreground));
 }
+.border-foreground\/10 {
+  border-color: hsl(var(--foreground) / 0.1);
+}
+.border-foreground\/20 {
+  border-color: hsl(var(--foreground) / 0.2);
+}
 .border-foreground\/30 {
   border-color: hsl(var(--foreground) / 0.3);
 }
@@ -1925,6 +1988,10 @@ html.dark { color-scheme: dark; }
 }
 .border-t-transparent {
   border-top-color: transparent;
+}
+.bg-\[\#FAF8F2\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(250 248 242 / var(--tw-bg-opacity));
 }
 .bg-\[--color-bg\] {
   background-color: var(--color-bg);
@@ -2373,6 +2440,10 @@ html.dark { color-scheme: dark; }
   font-size: 1.5rem;
   line-height: 2rem;
 }
+.text-3xl {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
 .text-\[0\.8rem\] {
   font-size: 0.8rem;
 }
@@ -2396,6 +2467,10 @@ html.dark { color-scheme: dark; }
 .text-sm {
   font-size: 0.875rem;
   line-height: 1.25rem;
+}
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
 }
 .text-xs {
   font-size: 0.75rem;
@@ -2785,6 +2860,22 @@ html.dark { color-scheme: dark; }
 }
 
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+@media print {
+  body * { visibility: hidden !important; }
+  .invoice-document, .invoice-document * { visibility: visible !important; }
+  .invoice-document {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .print\:hidden { display: none !important; }
+  @page { margin: 0; size: A4; }
+}
 
 .file\:border-0::file-selector-button {
   border-width: 0px;
@@ -3831,6 +3922,36 @@ html.dark { color-scheme: dark; }
   background-color: rgb(64 64 64 / var(--tw-bg-opacity));
 }
 
+@media print {
+
+  .print\:hidden {
+    display: none;
+  }
+
+  .print\:max-h-none {
+    max-height: none;
+  }
+
+  .print\:overflow-visible {
+    overflow: visible;
+  }
+
+  .print\:bg-\[\#FAF8F2\] {
+    --tw-bg-opacity: 1;
+    background-color: rgb(250 248 242 / var(--tw-bg-opacity));
+  }
+
+  .print\:px-12 {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+
+  .print\:py-12 {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+}
+
 @media (min-width: 640px) {
 
   .sm\:bottom-0 {
@@ -3855,6 +3976,10 @@ html.dark { color-scheme: dark; }
 
   .sm\:grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sm\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .sm\:flex-row {
@@ -3936,6 +4061,20 @@ html.dark { color-scheme: dark; }
 
   .md\:grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .md\:p-8 {
+    padding: 2rem;
+  }
+
+  .md\:px-12 {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+
+  .md\:py-12 {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
   }
 }
 
