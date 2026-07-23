@@ -68,6 +68,10 @@ function toISO(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+function formatDayMonth(d: Date): string {
+  return `${String(d.getDate()).padStart(2, '0')} ${MONTH_LABELS[d.getMonth()]}`;
+}
+
 function daysBetween(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / 86400000);
 }
@@ -454,7 +458,7 @@ export function GanttView({
       {showAddPanel && <AddPhasePanel onClose={() => setShowAddPanel(false)} onSave={(p) => { onAddPhase?.(p); setShowAddPanel(false); }} />}
       {editingPhase && <EditPhasePanel phase={editingPhase} onClose={() => setEditingPhase(null)} onSave={(p) => { onEditPhase?.(p); setEditingPhase(null); }} />}
 
-      <div className="card-base overflow-hidden inline-flex flex-col" style={{ maxHeight: 'calc(100vh - 140px)' }}>
+      <div className="card-base overflow-hidden flex w-full flex-col" style={{ maxHeight: 'calc(100vh - 140px)' }}>
         <div className="flex">
           {/* ════════ COLUMN 1 — LEFT SIDEBAR ════════ */}
           <div className="flex flex-col flex-shrink-0 border-r border-border bg-card" style={{ width: LEFT_COL_W }}>
@@ -504,11 +508,11 @@ export function GanttView({
               Add New Phase
             </button>
 
-            {/* Row 4: Today button */}
-            <div className="flex items-center px-4 border-t border-border bg-card flex-shrink-0" style={{ height: ROW4_H }}>
+            {/* Row 4: Today — text-only, aligned with zoom dropdown */}
+            <div className="flex items-center px-4 bg-card flex-shrink-0" style={{ height: ROW4_H }}>
               <button
                 onClick={scrollToToday}
-                className="notion-button border border-border text-sm w-full"
+                className="h-8 flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 Today
               </button>
@@ -518,7 +522,7 @@ export function GanttView({
           {/* ════════ COLUMN 2 — TIMELINE ════════ */}
           <div className="flex flex-col overflow-hidden" style={{ width: `calc(100% - ${LEFT_COL_W}px)` }}>
             {/* Scrollable timeline area — horizontal scroll only */}
-            <div ref={scrollRef} className="overflow-x-auto overflow-y-hidden modal-scroll">
+            <div ref={scrollRef} className="overflow-x-auto overflow-y-hidden gantt-scroll">
               <div style={{ width: calendarW }} className="relative">
 
                 {/* Row 1: Month YYYY (group header) */}
@@ -584,10 +588,10 @@ export function GanttView({
                             {phase.name}
                           </span>
                         )}
-                        {/* Due date */}
-                        {barWidth > 120 && (
-                          <span className="absolute inset-y-0 right-2 flex items-center text-[10px] text-foreground/40">
-                            {parseDate(phase.end).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                        {/* Date range — DD Mon - DD Mon */}
+                        {barWidth > 140 && (
+                          <span className="absolute inset-y-0 right-2 flex items-center text-[10px] text-foreground/40 whitespace-nowrap">
+                            {formatDayMonth(parseDate(phase.start))} - {formatDayMonth(parseDate(phase.end))}
                           </span>
                         )}
                       </div>
@@ -601,7 +605,7 @@ export function GanttView({
             </div>
 
             {/* Row 4: Zoom dropdown (fixed at bottom, opens upward) */}
-            <div className="flex items-center justify-end px-4 border-t border-border bg-card flex-shrink-0" style={{ height: ROW4_H }}>
+            <div className="flex items-center justify-end px-4 bg-card flex-shrink-0" style={{ height: ROW4_H }}>
               <ZoomSelector value={zoom} onChange={setZoom} />
             </div>
           </div>

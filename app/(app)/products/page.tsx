@@ -318,7 +318,7 @@ export default function ProductsPage() {
     <>
       {/* ── Add Product side panel ── */}
       {addType === 'product' && (
-        <SidePanel onClose={closePanel} footer={
+        <SidePanel title="Add Product" subtitle="Add a product to your library" onClose={closePanel} footer={
           <><div /><div className="flex gap-2">
             <button onClick={closePanel} className="notion-button border border-border">Cancel</button>
             <button onClick={handleAddProduct} className="btn-primary">Add Product</button>

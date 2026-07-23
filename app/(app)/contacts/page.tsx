@@ -128,7 +128,7 @@ export default function ContactsPage() {
   return (
     <>
       {showAddClient && (
-        <SidePanel onClose={() => setShowAddClient(false)} footer={
+        <SidePanel title="Add Client" subtitle="Create a new client contact" onClose={() => setShowAddClient(false)} footer={
           <><div /><div className="flex gap-2">
             <button onClick={() => setShowAddClient(false)} className="notion-button border border-border">Cancel</button>
             <button onClick={handleAddClient} className="btn-primary">Add Client</button>
@@ -156,7 +156,7 @@ export default function ContactsPage() {
       )}
 
       {showAddSupplier && (
-        <SidePanel onClose={() => setShowAddSupplier(false)} footer={
+        <SidePanel title="Add Supplier" subtitle="Create a new supplier contact" onClose={() => setShowAddSupplier(false)} footer={
           <><div /><div className="flex gap-2">
             <button onClick={() => setShowAddSupplier(false)} className="notion-button border border-border">Cancel</button>
             <button onClick={handleAddSupplier} className="btn-primary">Add Supplier</button>

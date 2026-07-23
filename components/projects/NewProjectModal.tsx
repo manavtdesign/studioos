@@ -60,6 +60,8 @@ export function NewProjectModal({ onClose, onSave }: NewProjectModalProps) {
   return (
     <>
       <SidePanel
+        title="Create Project"
+        subtitle="Add a new project to your workspace"
         onClose={onClose}
         footer={
           <>

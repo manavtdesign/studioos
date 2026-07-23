@@ -74,7 +74,7 @@ export default function VendorsPage() {
   return (
     <>
       {showAddPanel && (
-        <SidePanel onClose={() => setShowAddPanel(false)} footer={
+        <SidePanel title="Add Vendor" subtitle="Add a supplier or contractor to your database" onClose={() => setShowAddPanel(false)} footer={
           <><div /><div className="flex gap-2">
             <button onClick={() => setShowAddPanel(false)} className="notion-button border border-border">Cancel</button>
             <button onClick={handleAddVendor} className="btn-primary">Add Vendor</button>

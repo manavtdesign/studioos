@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 interface DatePickerProps {
   value: string;
@@ -12,8 +12,91 @@ interface DatePickerProps {
   align?: 'left' | 'right';
 }
 
+function CalendarSelect({ value, options, onChange, showNavigation, onPrev, onNext, gridMode }: {
+  value: string | number;
+  options: { label: string; value: number }[];
+  onChange: (v: number) => void;
+  showNavigation?: boolean;
+  onPrev?: () => void;
+  onNext?: () => void;
+  gridMode?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+  const current = options.find(o => o.value === value);
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="text-sm font-medium hover:bg-muted rounded-md px-2 py-1 flex items-center gap-1 transition-colors"
+      >
+        {current?.label ?? value}
+        <ChevronDown size={12} className="text-muted-foreground" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-50" onClick={() => setOpen(false)} />
+          <div className="absolute top-full left-0 mt-1 bg-popover border border-border rounded-xl shadow-lg z-[60] p-2 min-w-[6rem]">
+            {showNavigation && (
+              <div className="flex items-center justify-between px-1 pb-1.5 mb-1 border-b border-border/60">
+                <button type="button" onClick={onPrev} className="p-1 hover:bg-muted rounded-lg">
+                  <ChevronLeft size={14} className="text-muted-foreground" />
+                </button>
+                <button type="button" onClick={onNext} className="p-1 hover:bg-muted rounded-lg">
+                  <ChevronRight size={14} className="text-muted-foreground" />
+                </button>
+              </div>
+            )}
+            {gridMode ? (
+              <div className="grid grid-cols-4 gap-0.5">
+                {options.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => { onChange(opt.value); setOpen(false); }}
+                    className={`flex items-center justify-center px-2 py-1.5 text-xs rounded-lg transition-colors ${opt.value === value ? 'bg-foreground text-background font-medium' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="py-0.5">
+                {options.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => { onChange(opt.value); setOpen(false); }}
+                    className="flex items-center justify-between w-full px-3 py-1.5 text-sm text-left hover:bg-muted transition-colors whitespace-nowrap"
+                  >
+                    <span className={opt.value === value ? 'text-foreground font-medium' : 'text-muted-foreground'}>{opt.label}</span>
+                    {opt.value === value && <span className="w-1.5 h-1.5 rounded-full bg-foreground/50" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function DatePicker({ value, onChange, placeholder = 'Select date', align = 'left' }: DatePickerProps) {
   const [open, setOpen] = useState(false);
+  const [yearRange, setYearRange] = useState(() => {
+    if (value) {
+      const d = new Date(value);
+      if (!isNaN(d.getTime())) return Math.floor(d.getFullYear() / 5) * 5;
+    }
+    return Math.floor(new Date().getFullYear() / 5) * 5;
+  });
   const [viewDate, setViewDate] = useState(() => {
     if (value) {
       const d = new Date(value);
@@ -102,22 +185,20 @@ export function DatePicker({ value, onChange, placeholder = 'Select date', align
               <ChevronLeft size={18} className="text-muted-foreground" />
             </button>
             <div className="flex items-center gap-1">
-              <select
+              <CalendarSelect
                 value={viewDate.getMonth()}
-                onChange={(e) => setViewDate(new Date(viewDate.getFullYear(), parseInt(e.target.value), 1))}
-                className="bg-transparent text-sm font-medium outline-none cursor-pointer hover:text-foreground"
-              >
-                {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
-              </select>
-              <select
+                options={MONTHS.map((m, i) => ({ label: m, value: i }))}
+                onChange={(v) => setViewDate(new Date(viewDate.getFullYear(), v, 1))}
+                gridMode
+              />
+              <CalendarSelect
                 value={viewDate.getFullYear()}
-                onChange={(e) => setViewDate(new Date(parseInt(e.target.value), viewDate.getMonth(), 1))}
-                className="bg-transparent text-sm font-medium outline-none cursor-pointer hover:text-foreground"
-              >
-                {Array.from({ length: 10 }, (_, i) => viewDate.getFullYear() - 5 + i).map((y) => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
+                options={Array.from({ length: 5 }, (_, i) => yearRange + i).map((y) => ({ label: String(y), value: y }))}
+                onChange={(v) => setViewDate(new Date(v, viewDate.getMonth(), 1))}
+                showNavigation
+                onPrev={() => setYearRange(r => r - 5)}
+                onNext={() => setYearRange(r => r + 5)}
+              />
             </div>
             <button type="button" onClick={nextMonth} className="p-1 hover:bg-muted rounded-lg">
               <ChevronRight size={18} className="text-muted-foreground" />
@@ -136,6 +217,17 @@ export function DatePicker({ value, onChange, placeholder = 'Select date', align
           {/* Days */}
           <div className="grid grid-cols-7 gap-0.5">
             {renderDays()}
+          </div>
+
+          {/* Today button */}
+          <div className="flex justify-center pt-2">
+            <button
+              type="button"
+              onClick={() => setViewDate(new Date())}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors px-3 py-1"
+            >
+              Today
+            </button>
           </div>
         </div>
       )}
