@@ -189,7 +189,7 @@ export default function DashboardPage() {
       {showNewProject && <NewProjectModal onClose={() => setShowNewProject(false)} onSave={handleNewProject} />}
 
       {showAddClient && (
-        <SidePanel onClose={() => setShowAddClient(false)} footer={
+        <SidePanel title="Add Client" subtitle="Create a new client contact" onClose={() => setShowAddClient(false)} footer={
           <><div /><div className="flex gap-2">
             <button onClick={() => setShowAddClient(false)} className="notion-button border border-border">Cancel</button>
             <button onClick={handleAddClient} className="btn-primary">Add Client</button>
@@ -217,7 +217,7 @@ export default function DashboardPage() {
       )}
 
       {showAddProduct && (
-        <SidePanel onClose={() => setShowAddProduct(false)} footer={
+        <SidePanel title="Add Product" subtitle="Add a new product to the library" onClose={() => setShowAddProduct(false)} footer={
           <><div /><div className="flex gap-2">
             <button onClick={() => setShowAddProduct(false)} className="notion-button border border-border">Cancel</button>
             <button onClick={handleAddProduct} className="btn-primary">Add Product</button>
@@ -247,7 +247,7 @@ export default function DashboardPage() {
       )}
 
       {showAddSupplier && (
-        <SidePanel onClose={() => setShowAddSupplier(false)} footer={
+        <SidePanel title="Add Supplier" subtitle="Add a new supplier to your network" onClose={() => setShowAddSupplier(false)} footer={
           <><div /><div className="flex gap-2">
             <button onClick={() => setShowAddSupplier(false)} className="notion-button border border-border">Cancel</button>
             <button onClick={handleAddSupplier} className="btn-primary">Add Supplier</button>

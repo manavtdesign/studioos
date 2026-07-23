@@ -508,11 +508,11 @@ export function GanttView({
               Add New Phase
             </button>
 
-            {/* Row 4: Today — text-only, aligned with zoom dropdown */}
-            <div className="flex items-center px-4 bg-card flex-shrink-0" style={{ height: ROW4_H }}>
+            {/* Row 4: Today — aligned with zoom dropdown text */}
+            <div className="flex items-center justify-start px-4 bg-card flex-shrink-0" style={{ height: ROW4_H }}>
               <button
                 onClick={scrollToToday}
-                className="h-8 flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="notion-button border border-border text-sm w-32 justify-start"
               >
                 Today
               </button>

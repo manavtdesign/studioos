@@ -1529,6 +1529,9 @@ html.dark { color-scheme: dark; }
   min-width: -moz-max-content;
   min-width: max-content;
 }
+.min-w-\[14rem\] {
+  min-width: 14rem;
+}
 .max-w-2xl {
   max-width: 42rem;
 }
@@ -1699,6 +1702,9 @@ html.dark { color-scheme: dark; }
 }
 .items-stretch {
   align-items: stretch;
+}
+.justify-start {
+  justify-content: flex-start;
 }
 .justify-end {
   justify-content: flex-end;

@@ -42,7 +42,7 @@ function CalendarSelect({ value, options, onChange, showNavigation, onPrev, onNe
       {open && (
         <>
           <div className="fixed inset-0 z-50" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 mt-1 bg-popover border border-border rounded-xl shadow-lg z-[60] p-2 min-w-[6rem]">
+          <div className="absolute top-full left-0 mt-1 bg-popover border border-border rounded-xl shadow-lg z-[60] p-2 min-w-[14rem]">
             {showNavigation && (
               <div className="flex items-center justify-between px-1 pb-1.5 mb-1 border-b border-border/60">
                 <button type="button" onClick={onPrev} className="p-1 hover:bg-muted rounded-lg">
@@ -54,13 +54,13 @@ function CalendarSelect({ value, options, onChange, showNavigation, onPrev, onNe
               </div>
             )}
             {gridMode ? (
-              <div className="grid grid-cols-4 gap-0.5">
+              <div className="grid grid-cols-4 gap-1 p-1">
                 {options.map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
                     onClick={() => { onChange(opt.value); setOpen(false); }}
-                    className={`flex items-center justify-center px-2 py-1.5 text-xs rounded-lg transition-colors ${opt.value === value ? 'bg-foreground text-background font-medium' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                    className={`flex items-center justify-center h-9 text-sm rounded-lg transition-colors ${opt.value === value ? 'bg-foreground text-background font-medium' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
                   >
                     {opt.label}
                   </button>
