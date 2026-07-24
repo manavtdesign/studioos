@@ -77,7 +77,6 @@ export function FloatingPreviewModal({ data, onClose, anchorToLeft = true, centr
               <button onClick={onClose} className="notion-button border border-border">Close</button>
             </div>
           </div>
-          {/* InvoicePreview handles its own internal scrolling & A4 scaling */}
           <div className="flex-1 min-h-0">
             <InvoicePreview data={data} />
           </div>

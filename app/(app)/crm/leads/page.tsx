@@ -9,7 +9,7 @@ import { LeadStatusBadge } from '@/components/crm/StatusBadge';
 import { NewLeadModal } from '@/components/crm/NewLeadModal';
 import { EmptyState } from '@/components/crm/EmptyState';
 import { PinButton } from '@/components/crm/PinButton';
-import { Search, X, Filter, ArrowUpDown, Check, LayoutGrid, Rows3, ExternalLink } from 'lucide-react';
+import { Search, X, Filter, ArrowUpDown, Check, LayoutGrid, Rows3 } from 'lucide-react';
 
 const SORT_OPTIONS = [
   { label: 'Name', value: 'name' },
@@ -152,7 +152,7 @@ export default function LeadsPage() {
           </div>
 
           <button onClick={() => setShowModal(true)} className="btn-primary">
-            + New Lead
+            + Add Lead
           </button>
         </div>
 
@@ -160,12 +160,11 @@ export default function LeadsPage() {
         {filtered.length === 0 ? (
           <EmptyState icon="person_search"
             description={search || hasFilters ? 'Try adjusting your search or filters.' : 'Add your first lead to get started.'}
-            action={{ label: '+ New Lead', onClick: () => setShowModal(true) }} />
+            action={{ label: '+ Add Lead', onClick: () => setShowModal(true) }} />
         ) : view === 'card' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filtered.map(lead => (
-              <div key={lead.id} className="card-base card-hover p-4 cursor-pointer">
-                <Link href={`/crm/leads/${lead.id}`} className="block">
+              <Link key={lead.id} href={`/crm/leads/${lead.id}`} className="card-base card-hover p-4 cursor-pointer hover:no-underline">
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-sm truncate">{lead.firstName} {lead.lastName}</p>
@@ -183,7 +182,6 @@ export default function LeadsPage() {
                     <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">Follow-up</span><span>{lead.nextFollowUp}</span></div>
                   </div>
                 </Link>
-              </div>
             ))}
             <button onClick={() => setShowModal(true)} className="border-2 border-dashed border-border rounded-xl h-40 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground transition-colors">
               <span className="text-sm">New Lead</span>
@@ -207,14 +205,14 @@ export default function LeadsPage() {
               <tbody>
                 {filtered.map(lead => (
                   <tr key={lead.id} className="border-b border-border/40 last:border-b-0 hover:bg-muted/15">
-                    <td className="table-cell"><Link href={`/crm/leads/${lead.id}`}><p className="font-medium">{lead.firstName} {lead.lastName}</p><p className="text-xs text-muted-foreground">{lead.email}</p></Link></td>
+                    <td className="table-cell"><Link href={`/crm/leads/${lead.id}`} className="hover:no-underline"><p className="font-medium">{lead.firstName} {lead.lastName}</p><p className="text-xs text-muted-foreground">{lead.email}</p></Link></td>
                     <td className="table-cell text-muted-foreground">{lead.company}</td>
                     <td className="table-cell text-muted-foreground">{lead.projectType}</td>
                     <td className="table-cell text-muted-foreground">{formatBudget(lead.estimatedBudget)}</td>
                     <td className="table-cell"><LeadStatusBadge status={lead.status} /></td>
                     <td className="table-cell text-muted-foreground">{lead.leadSource}</td>
                     <td className="table-cell text-muted-foreground">{lead.nextFollowUp}</td>
-                    <td className="table-cell"><div className="flex gap-1"><Link href={`/crm/leads/${lead.id}`} className="p-1 hover:bg-muted rounded text-muted-foreground"><ExternalLink size={15} /></Link><PinButton pinned={lead.pinned} onToggle={e => { e.preventDefault(); togglePin(lead.id); }} /></div></td>
+                    <td className="table-cell"><div className="flex gap-1"><PinButton pinned={lead.pinned} onToggle={e => { e.preventDefault(); togglePin(lead.id); }} /></div></td>
                   </tr>
                 ))}
               </tbody>

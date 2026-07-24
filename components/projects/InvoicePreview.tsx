@@ -50,20 +50,24 @@ export interface InvoicePreviewData {
 // ── A4 scaling hook ──────────────────────────────────────────────────────────
 // Measures the container width and computes a uniform scale so the fixed-size
 // A4 page fits the available width while preserving its aspect ratio.
-function useA4Scale(containerRef: React.RefObject<HTMLDivElement>) {
+function useA4Scale(containerRef: React.RefObject<HTMLDivElement>, pageCount: number) {
   const [scale, setScale] = useState(0.5);
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const compute = () => {
-      const w = el.clientWidth - 4; // a hair of breathing room
-      if (w > 0) setScale(Math.min(w / A4_WIDTH_PX, 1));
+      const w = el.clientWidth - 4;
+      const h = el.clientHeight - 4;
+      if (w <= 0 || h <= 0) return;
+      const scaleW = w / A4_WIDTH_PX;
+      const scaleH = h / (A4_HEIGHT_PX * pageCount);
+      setScale(Math.min(scaleW, scaleH, 1));
     };
     compute();
     const ro = new ResizeObserver(compute);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [containerRef]);
+  }, [containerRef, pageCount]);
   return scale;
 }
 
@@ -257,9 +261,10 @@ export interface InvoicePreviewProps {
   onExportPDF?: () => void;
 }
 
+type PreviewLineItem = { id: string; description: string; hours: string; rate: string; isPageBreak?: boolean };
+
 export const InvoicePreview = memo(function InvoicePreview({ data, showToolbar, onExportPDF }: InvoicePreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const scale = useA4Scale(containerRef);
 
   const handlePrint = useCallback(() => {
     onExportPDF?.();
@@ -274,10 +279,8 @@ export const InvoicePreview = memo(function InvoicePreview({ data, showToolbar, 
     const subtotal = raw.reduce((s, l) => s + lineAmount(l.hours, l.rate), 0);
     const total = subtotal || (data.amount ?? 0);
 
-    // Split into pages: auto-paginate at MAX_LINES_PER_PAGE, and force a new
-    // page whenever a line item with isPageBreak=true is encountered.
-    const pages: typeof raw[] = [];
-    let current: typeof raw = [];
+    const pages: PreviewLineItem[][] = [];
+    let current: PreviewLineItem[] = [];
     for (const line of raw) {
       if (line.isPageBreak && current.length > 0) {
         pages.push(current);
@@ -295,7 +298,9 @@ export const InvoicePreview = memo(function InvoicePreview({ data, showToolbar, 
   }, [data.lineItems, data.referenceDesc, data.amount]);
 
   const totalPages = pages.length;
+  const scale = useA4Scale(containerRef, totalPages);
   const scaledHeight = A4_HEIGHT_PX * scale;
+  const multiPage = totalPages > 1;
 
   return (
     <div className="flex flex-col h-full">
@@ -312,8 +317,8 @@ export const InvoicePreview = memo(function InvoicePreview({ data, showToolbar, 
         </div>
       )}
 
-      <div ref={containerRef} className="flex-1 overflow-y-auto modal-scroll bg-muted/20 print:overflow-visible print:bg-white">
-        <div className="flex flex-col items-center gap-6 py-6 print:py-0 print:gap-0">
+      <div ref={containerRef} className={multiPage ? 'flex-1 overflow-y-auto modal-scroll bg-muted/20 print:overflow-visible print:bg-white' : 'flex-1 overflow-hidden bg-muted/20 print:overflow-visible print:bg-white'}>
+        <div className={multiPage ? 'flex flex-col items-center gap-6 py-6 print:py-0 print:gap-0' : 'flex flex-col items-center justify-center py-4 print:py-0 print:gap-0'}>
           {pages.map((pageLines, idx) => (
             <div
               key={idx}

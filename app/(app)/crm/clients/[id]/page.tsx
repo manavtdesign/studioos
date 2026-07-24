@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { formatBudget } from '@/lib/crm-data';
+import { formatBudget, CLIENT_STATUSES, PROJECT_TYPES, DESIGNERS, Client } from '@/lib/crm-data';
 import { useCrm } from '@/lib/crm-context';
 import { useActivity } from '@/lib/activity-context';
 import { ClientStatusBadge } from '@/components/crm/StatusBadge';
@@ -11,6 +11,7 @@ import { Timeline } from '@/components/crm/Timeline';
 import { NotesPanel } from '@/components/crm/NotesPanel';
 import { DetailSection, DetailField } from '@/components/crm/DetailSection';
 import { DeleteClientDialog } from '@/components/crm/DeleteClientDialog';
+import { SidePanel } from '@/components/ui/SidePanel';
 import { BadgeCheck, Folder, Clock, User, Mail, Phone, MapPin } from 'lucide-react';
 
 const projectStatusColors: Record<string, string> = {
@@ -26,10 +27,11 @@ interface Props {
 
 export default function ClientDetailPage({ params }: Props) {
   const { id } = params;
-  const { clients, deleteClient } = useCrm();
+  const { clients, deleteClient, updateClient } = useCrm();
   const { addActivity } = useActivity();
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEditPanel, setShowEditPanel] = useState(false);
   const client = clients.find((c) => c.id === id);
 
   if (!client) {
@@ -44,6 +46,28 @@ export default function ClientDetailPage({ params }: Props) {
     );
   }
 
+  const handleArchive = () => {
+    const newStatus = client.status === 'Active' ? 'Inactive' : 'Active';
+    updateClient(id, { status: newStatus });
+    addActivity({
+      title: newStatus === 'Inactive' ? 'Client Archived' : 'Client Reactivated',
+      description: `${client.primaryContact} has been ${newStatus === 'Inactive' ? 'archived' : 'reactivated'}`,
+      icon: 'archive',
+      source: 'Contacts',
+    });
+  };
+
+  const handleSaveEdit = (updates: Partial<Client>) => {
+    updateClient(id, updates);
+    addActivity({
+      title: 'Client Updated',
+      description: `${client.primaryContact}'s details have been updated`,
+      icon: 'edit',
+      source: 'Contacts',
+    });
+    setShowEditPanel(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -57,16 +81,19 @@ export default function ClientDetailPage({ params }: Props) {
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
-          <button className="notion-button border border-border text-sm">
-            Archive
+          <button onClick={() => router.push('/contacts')} className="notion-button border border-border text-sm">
+            All Contacts
           </button>
-          <button className="notion-button border border-border text-sm">
+          <button onClick={handleArchive} className="notion-button border border-border text-sm">
+            {client.status === 'Active' ? 'Archive' : 'Reactivate'}
+          </button>
+          <button onClick={() => setShowEditPanel(true)} className="notion-button border border-border text-sm">
             Edit
           </button>
           <button onClick={() => setShowDeleteDialog(true)} className="notion-button border border-border text-sm hover:text-red-600">
             Delete
           </button>
-          <button className="notion-button bg-foreground text-background hover:bg-foreground/90 text-sm">
+          <button onClick={() => router.push('/projects')} className="notion-button bg-foreground text-background hover:bg-foreground/90 text-sm">
             Create Project
           </button>
         </div>
@@ -137,7 +164,7 @@ export default function ClientDetailPage({ params }: Props) {
             </div>
           </DetailSection>
 
-          <DetailSection action={{ label: 'Edit', icon: undefined, onClick: () => {} }}>
+          <DetailSection action={{ label: 'Edit', icon: undefined, onClick: () => setShowEditPanel(true) }}>
             <div className="text-sm text-muted-foreground">
               {client.billingAddress ? (
                 <p>{client.billingAddress}</p>
@@ -151,7 +178,7 @@ export default function ClientDetailPage({ params }: Props) {
 
         {/* Right columns */}
         <div className="lg:col-span-2 space-y-4">
-          <DetailSection action={{ label: 'Create Project', icon: undefined, onClick: () => {} }}>
+          <DetailSection action={{ label: 'Create Project', icon: undefined, onClick: () => router.push('/projects') }}>
             {client.projects.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">No projects yet.</p>
             ) : (
@@ -206,6 +233,82 @@ export default function ClientDetailPage({ params }: Props) {
           onCancel={() => setShowDeleteDialog(false)}
         />
       )}
+
+      {showEditPanel && (
+        <EditClientSidePanel client={client} onClose={() => setShowEditPanel(false)} onSave={handleSaveEdit} />
+      )}
     </div>
+  );
+}
+
+// ── Edit Client Side Panel ────────────────────────────────────────────────────
+function EditClientSidePanel({ client, onClose, onSave }: { client: Client; onClose: () => void; onSave: (u: Partial<Client>) => void }) {
+  const [primaryContact, setPrimaryContact] = useState(client.primaryContact);
+  const [company, setCompany] = useState(client.company);
+  const [email, setEmail] = useState(client.email);
+  const [phone, setPhone] = useState(client.phone);
+  const [address, setAddress] = useState(client.address);
+  const [website, setWebsite] = useState(client.website || '');
+  const [status, setStatus] = useState<Client['status']>(client.status);
+  const [projectType, setProjectType] = useState(client.projectType);
+  const [assignedDesigner, setAssignedDesigner] = useState(client.assignedDesigner);
+
+  return (
+    <SidePanel title="Edit Client" subtitle={client.primaryContact} onClose={onClose} footer={
+      <><div /><div className="flex gap-2">
+        <button onClick={onClose} className="notion-button border border-border">Cancel</button>
+        <button onClick={() => onSave({ primaryContact, company, email, phone, address, website, status, projectType, assignedDesigner })} className="btn-primary">Save Changes</button>
+      </div></>
+    }>
+      <div className="px-6 py-5 space-y-4">
+        <div>
+          <label className="block text-xs text-muted-foreground mb-1.5">Full Name</label>
+          <input value={primaryContact} onChange={e => setPrimaryContact(e.target.value)} className="modal-input" />
+        </div>
+        <div>
+          <label className="block text-xs text-muted-foreground mb-1.5">Company</label>
+          <input value={company} onChange={e => setCompany(e.target.value)} className="modal-input" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs text-muted-foreground mb-1.5">Email</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="modal-input" />
+          </div>
+          <div>
+            <label className="block text-xs text-muted-foreground mb-1.5">Phone</label>
+            <input value={phone} onChange={e => setPhone(e.target.value)} className="modal-input" />
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs text-muted-foreground mb-1.5">Address</label>
+          <input value={address} onChange={e => setAddress(e.target.value)} className="modal-input" />
+        </div>
+        <div>
+          <label className="block text-xs text-muted-foreground mb-1.5">Website</label>
+          <input value={website} onChange={e => setWebsite(e.target.value)} className="modal-input" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs text-muted-foreground mb-1.5">Status</label>
+            <select value={status} onChange={e => setStatus(e.target.value as Client['status'])} className="modal-input">
+              {CLIENT_STATUSES.map(s => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-muted-foreground mb-1.5">Project Type</label>
+            <select value={projectType} onChange={e => setProjectType(e.target.value as Client['projectType'])} className="modal-input">
+              {PROJECT_TYPES.map(t => <option key={t}>{t}</option>)}
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs text-muted-foreground mb-1.5">Assigned Designer</label>
+          <select value={assignedDesigner} onChange={e => setAssignedDesigner(e.target.value)} className="modal-input">
+            <option value="">Unassigned</option>
+            {DESIGNERS.map(d => <option key={d}>{d}</option>)}
+          </select>
+        </div>
+      </div>
+    </SidePanel>
   );
 }

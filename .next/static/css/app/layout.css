@@ -3224,6 +3224,10 @@ html.dark { color-scheme: dark; }
   text-decoration-line: underline;
 }
 
+.hover\:no-underline:hover {
+  text-decoration-line: none;
+}
+
 .hover\:opacity-100:hover {
   opacity: 1;
 }

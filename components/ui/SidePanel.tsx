@@ -46,9 +46,9 @@ export function SidePanel({ title, subtitle, onClose, children, footer, width = 
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose(); };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, []);
+  }, [onClose, closing]);
 
-  const handleClose = () => {
+  const handleClose = closing ? onClose : () => {
     setVisible(false);
     setTimeout(onClose, 280);
   };

@@ -9,7 +9,7 @@ import { EmptyState } from '@/components/crm/EmptyState';
 import { PinButton } from '@/components/crm/PinButton';
 import { SidePanel } from '@/components/ui/SidePanel';
 import { useActivity } from '@/lib/activity-context';
-import { Search, X, Filter, ArrowUpDown, Check, LayoutGrid, Rows3, ExternalLink } from 'lucide-react';
+import { Search, X, Filter, ArrowUpDown, Check, LayoutGrid, Rows3 } from 'lucide-react';
 
 const SORT_OPTIONS = [
   { label: 'Name', value: 'name' },
@@ -93,7 +93,7 @@ export default function ClientsPage() {
   return (
     <>
       {showModal && (
-        <SidePanel onClose={() => setShowModal(false)} footer={
+        <SidePanel title="Add Client" subtitle="Create a new client contact" onClose={() => setShowModal(false)} footer={
           <><div /><div className="flex gap-2">
             <button onClick={() => setShowModal(false)} className="notion-button border border-border">Cancel</button>
             <button onClick={handleCreateClient} className="btn-primary">Create Client</button>
@@ -196,33 +196,31 @@ export default function ClientsPage() {
           </div>
 
           <button onClick={() => setShowModal(true)} className="btn-primary">
-            + New Client
+            + Add Client
           </button>
         </div>
 
         {filtered.length === 0 ? (
           <EmptyState icon="badge"
             description={search || hasFilters ? 'Try adjusting your search or filters.' : 'Add your first client.'}
-            action={{ label: '+ New Client', onClick: () => setShowModal(true) }} />
+            action={{ label: '+ Add Client', onClick: () => setShowModal(true) }} />
         ) : view === 'card' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filtered.map(client => {
               const activeProjects = client.projects.filter(p => p.status === 'Active').length;
               const currentPhase = client.projects.find(p => p.status === 'Active')?.phase ?? '—';
               return (
-                <div key={client.id} className="card-base card-hover p-4 cursor-pointer">
-                  <Link href={`/crm/clients/${client.id}`} className="block">
-                    <div className="flex items-start justify-between gap-2 mb-3">
-                      <div className="min-w-0 flex-1"><p className="font-medium text-sm truncate">{client.primaryContact}</p><p className="text-xs text-muted-foreground truncate">{client.company}</p></div>
-                      <div className="flex items-center gap-1.5 flex-shrink-0"><ClientStatusBadge status={client.status} /><PinButton pinned={client.pinned} onToggle={() => togglePin(client.id)} /></div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">Active Projects</span><span>{activeProjects}</span></div>
-                      <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">Phase</span><span>{currentPhase}</span></div>
-                      <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">Last Contact</span><span>{client.lastContact}</span></div>
-                    </div>
-                  </Link>
-                </div>
+                <Link key={client.id} href={`/crm/clients/${client.id}`} className="card-base card-hover p-4 cursor-pointer hover:no-underline">
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="min-w-0 flex-1"><p className="font-medium text-sm truncate">{client.primaryContact}</p><p className="text-xs text-muted-foreground truncate">{client.company}</p></div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0"><ClientStatusBadge status={client.status} /><PinButton pinned={client.pinned} onToggle={() => togglePin(client.id)} /></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">Active Projects</span><span>{activeProjects}</span></div>
+                    <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">Phase</span><span>{currentPhase}</span></div>
+                    <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">Last Contact</span><span>{client.lastContact}</span></div>
+                  </div>
+                </Link>
               );
             })}
             <button onClick={() => setShowModal(true)} className="border-2 border-dashed border-border rounded-xl h-40 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground transition-colors">
@@ -240,13 +238,13 @@ export default function ClientsPage() {
               <tbody>
                 {filtered.map(client => (
                   <tr key={client.id} className="border-b border-border/40 last:border-b-0 hover:bg-muted/15">
-                    <td className="table-cell"><Link href={`/crm/clients/${client.id}`}><p className="font-medium">{client.primaryContact}</p><p className="text-xs text-muted-foreground">{client.email}</p></Link></td>
+                    <td className="table-cell"><Link href={`/crm/clients/${client.id}`} className="hover:no-underline"><p className="font-medium">{client.primaryContact}</p><p className="text-xs text-muted-foreground">{client.email}</p></Link></td>
                     <td className="table-cell text-muted-foreground">{client.company}</td>
                     <td className="table-cell text-muted-foreground">{client.projects.length}</td>
                     <td className="table-cell text-muted-foreground">{client.phone}</td>
                     <td className="table-cell text-muted-foreground">{client.lastContact}</td>
                     <td className="table-cell"><ClientStatusBadge status={client.status} /></td>
-                    <td className="table-cell"><div className="flex gap-1"><Link href={`/crm/clients/${client.id}`} className="p-1 hover:bg-muted rounded text-muted-foreground"><ExternalLink size={15} /></Link><PinButton pinned={client.pinned} onToggle={e => { e.preventDefault(); togglePin(client.id); }} /></div></td>
+                    <td className="table-cell"><div className="flex gap-1"><PinButton pinned={client.pinned} onToggle={e => { e.preventDefault(); togglePin(client.id); }} /></div></td>
                   </tr>
                 ))}
               </tbody>
